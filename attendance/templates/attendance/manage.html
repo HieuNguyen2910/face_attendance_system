@@ -1,0 +1,240 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Hệ thống chấm công khuôn mặt</title>
+  <style>
+    /* ================= Reset & Body ================= */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { 
+        font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        background:#f0f2f5; 
+        color:#333; 
+        min-height:100vh; 
+        display:flex; 
+        flex-direction:column; 
+        align-items:center; 
+        width: 100%;
+        overflow-y: scroll;
+    }
+
+    /* ================= Header ================= */
+    header { 
+        width:100%; 
+        background:#1e1e2f; 
+        color:white; 
+        text-align:center; 
+        padding:20px 0; 
+        box-shadow:0 4px 6px rgba(0,0,0,0.1);
+    }
+    header h1 { 
+        font-size:28px; 
+        font-weight:700; 
+        text-transform:uppercase; 
+    }
+    nav { margin-top:10px; }
+    nav a { 
+        color:white; 
+        margin:0 20px; 
+        text-decoration:none; 
+        font-weight:600; 
+        font-size:16px; 
+        transition:color 0.2s;
+    }
+    nav a.active, nav a:hover { color:#00bfff; }
+
+    /* ================= Main Layout ================= */
+    main { 
+        width:100%; 
+        max-width:1100px; 
+        display:flex; 
+        justify-content:center; 
+        padding:40px 20px; 
+        flex:1;
+    }
+
+    /* ================= Manage Card ================= */
+    .manage-card { 
+        width:100%; 
+        max-width:980px; 
+        margin: 20px auto; 
+        padding:30px; 
+        background:#fff; 
+        border-radius:24px; 
+        box-shadow:0 12px 24px rgba(0,0,0,0.2);
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+    }
+
+    .manage-card h2 { 
+        font-size:28px;
+        font-weight:700;
+        color:#1e1e2f;
+        text-align:center;
+        text-transform:uppercase;
+        padding:20px 0;
+        border-radius:20px;
+        border:4px solid #ccc;
+        background:#f9f9f9;
+        width:100%;
+        box-shadow:0 6px 12px rgba(0,0,0,0.1);
+        margin-bottom:30px;
+    }
+
+    /* ================= Controls ================= */
+    .controls { 
+        display:flex; 
+        gap:20px; 
+        flex-wrap:wrap; 
+        margin-bottom:25px; 
+        width:100%;
+        justify-content:space-between;
+        align-items:center; 
+    }
+    .controls .primary,
+    .controls .warning,
+    .controls .danger {
+        padding:16px 24px; 
+        border-radius:18px; 
+        border:0; 
+        cursor:pointer; 
+        font-weight:bold; 
+        font-size:16px; 
+        transition:0.2s;
+    }
+
+    .controls .primary { background:#2b8aef; color:#fff; padding:10px 40px; font-size:18px}
+    .controls .primary:hover { background:#009acd; }
+
+    .controls .warning { background:#f59e0b; color:#fff; padding:10px 40px; font-size:18px}
+    .controls .warning:hover { background:#e67300; }
+
+    .controls .danger { background:#ef4444; color:#fff; padding:10px 40px; font-size:18px}
+    .controls .danger:hover { background:#c62828; }
+
+    .controls button{
+        padding:40px 40px; 
+        font-size:18px;  
+        border-radius:20px; 
+    }
+    .controls input[type="text"] { 
+        padding:14px 20px; 
+        border:1px solid #ddd; 
+        border-radius:20px; 
+        width:260px; 
+        font-size:16px; 
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .controls input[type="text"]:focus { 
+        outline:none; 
+        border-color:#00bfff; 
+        box-shadow: 0 0 8px rgba(0,191,255,0.3);
+    }
+
+    /* ================= Table ================= */
+    table.user-table { 
+        width:100%; 
+        border-collapse:collapse; 
+        font-size:16px; 
+        border-radius:12px; 
+        overflow:hidden;
+        box-shadow:0 6px 12px rgba(0,0,0,0.05);
+    }
+    table.user-table th, table.user-table td { 
+        padding:14px 12px; 
+        border-bottom:1px solid #eee; 
+        text-align:left; 
+    }
+    table.user-table tr:hover { background:#f0f8ff; }
+    table.user-table tr.selected { background:#d0ebff; }
+    table.user-table th { 
+        background:#f5f5f5; 
+        font-weight:700; 
+        text-transform:uppercase;
+    }
+
+    /* ================= Modal ================= */
+    .app-modal { 
+        position:fixed; left:0;top:0;right:0;bottom:0;
+        display:flex;align-items:center;justify-content:center;
+        background:rgba(0,0,0,0.5); z-index:9999; 
+    }
+    .modal-box { 
+        background:#fff; padding:24px; border-radius:20px;
+        max-width:720px; width:90%; box-shadow:0 12px 32px rgba(0,0,0,0.25); 
+    }
+    .modal-row { margin:12px 0; display:flex; gap:12px; align-items:center; }
+    .modal-row input { flex:1; padding:14px; border:1px solid #ddd; border-radius:20px; font-size:16px; }
+    .modal-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:16px; }
+
+    /* ================= Responsive ================= */
+    @media(max-width:600px){
+        .controls { flex-direction:column; gap:15px; align-items:flex-start; }
+        .controls input[type="text"]{ width:100%; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- HEADER -->
+  <header>
+    <h1>HỆ THỐNG CHẤM CÔNG KHUÔN MẶT</h1>
+    <nav>
+      <a href="{% url 'index' %}">Chấm công</a>
+      <a href="{% url 'manage' %}" class="active">Quản lý nhân viên</a>
+      <a href="{% url 'history' %}">Lịch sử chấm công</a>
+    </nav>
+  </header>
+
+  <!-- MAIN -->
+  <main>
+    <section class="manage-card">
+      <h2>Quản lý nhân viên</h2>
+
+      <div class="controls">
+        <div>
+          <button id="btnAdd" class="primary">Thêm nhân viên</button>
+          <button id="btnEdit" class="warning">Sửa thông tin</button>
+          <button id="btnDelete" class="danger">Xóa nhân viên</button>
+        </div>
+
+        <div>
+          <input id="searchInput" type="text" placeholder="Tìm theo ID hoặc tên">
+        </div>
+      </div>
+
+      <table class="user-table" id="userTable">
+        <thead>
+          <tr>
+            <th style="width:20%">ID</th>
+            <th style="width:45%">Họ tên</th>
+            <th style="width:35%">Vị trí</th>
+          </tr>
+        </thead>
+        <tbody id="userTBody">
+          <!-- JS sẽ render dữ liệu -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Modal container -->
+  <div id="modalRoot" style="display:none"></div>
+
+  <!-- Truyền URL API từ urls.py vào JS -->
+  <script>
+    window.apiUrls = {
+      listUsers: "{% url 'api_list_users' %}",
+      deleteUser: "{% url 'api_delete_user' %}",
+      updateUser: "{% url 'api_update_user' %}",
+      registerEmployee: "{% url 'api_register_employee' %}",
+      replaceFace: "{% url 'api_replace_face' %}"
+    };
+  </script>
+
+  <script src="{% static 'attendance/js/manage.js' %}?v=4"></script>
+</body>
+</html>

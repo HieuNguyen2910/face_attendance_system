@@ -1,0 +1,233 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Lịch sử chấm công</title>
+  <style>
+    /* ================= Reset & Body ================= */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { 
+        font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+        background:#f0f2f5; 
+        color:#333; 
+        min-height:100vh; 
+        display:flex; 
+        flex-direction:column; 
+        align-items:center;
+        width: 100%;
+        overflow-y: scroll;
+    }
+
+    /* ================= Header ================= */
+    header { 
+        width:100%; 
+        background:#1e1e2f; 
+        color:white; 
+        text-align:center; 
+        padding:20px 0; 
+        box-shadow:0 4px 6px rgba(0,0,0,0.1);
+    }
+    header h1 { 
+        font-size:28px; 
+        font-weight:700; 
+        text-transform:uppercase; 
+    }
+    nav { margin-top:10px; }
+    nav a { 
+        color:white; 
+        margin:0 20px; 
+        text-decoration:none; 
+        font-weight:600; 
+        font-size:16px; 
+        transition:color 0.2s;
+    }
+    nav a.active, nav a:hover { color:#00bfff; }
+
+    /* ================= Main Layout ================= */
+    main { 
+        width:100%; 
+        max-width:1100px; 
+        display:flex; 
+        justify-content:center; 
+        padding:40px 20px; 
+        flex:1;
+    }
+
+    /* ================= History Card ================= */
+    .history-card { 
+        width:100%; 
+        max-width:980px; 
+        margin: 20px auto; 
+        padding:30px; 
+        background:#fff; 
+        border-radius:24px; 
+        box-shadow:0 12px 24px rgba(0,0,0,0.2);
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+    }
+
+    .history-card h2 { 
+        font-size:28px;
+        font-weight:700;
+        color:#1e1e2f;
+        text-align:center;
+        text-transform:uppercase;
+        padding:20px 0;
+        border-radius:20px;
+        border:4px solid #ccc;
+        background:#f9f9f9;
+        width:100%;
+        box-shadow:0 6px 12px rgba(0,0,0,0.1);
+        margin-bottom:30px;
+    }
+
+    /* ================= Controls ================= */
+    .controls { 
+        display:flex; 
+        gap:20px; 
+        flex-wrap:wrap; 
+        margin-bottom:25px; 
+        width:100%;
+        justify-content:space-between;
+        align-items:center; 
+    }
+
+    .controls input[type="text"] { 
+        padding:14px 20px; 
+        border:1px solid #ddd; 
+        border-radius:20px; 
+        width:200px; 
+        font-size:16px; 
+        box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .controls input[type="text"]:focus { 
+        outline:none; 
+        border-color:#00bfff; 
+        box-shadow: 0 0 8px rgba(0,191,255,0.3);
+    }
+
+    .controls button {
+        padding:14px 24px; 
+        border-radius:18px; 
+        border:0; 
+        cursor:pointer; 
+        font-weight:bold; 
+        font-size:16px; 
+        transition:0.2s;
+    }
+    .controls .primary { background:#2b8aef; color:#fff; }
+    .controls .primary:hover { background:#009acd; }
+
+    /* ================= Table ================= */
+    table.history-table { 
+        width:100%; 
+        border-collapse:collapse; 
+        font-size:16px; 
+        border-radius:12px; 
+        overflow:hidden;
+        box-shadow:0 6px 12px rgba(0,0,0,0.05);
+    }
+    table.history-table th, table.history-table td { 
+        padding:14px 12px; 
+        border-bottom:1px solid #eee; 
+        text-align:center; 
+    }
+    table.history-table tr:hover { background:#f0f8ff; }
+    table.history-table th { 
+        background:#f5f5f5; 
+        font-weight:700; 
+        text-transform:uppercase;
+    }
+    td.empty {
+        text-align:center;
+        color:#777;
+        font-style:italic;
+        padding:25px;
+        background:#f9f9f9;
+    }
+
+    /* ================= Date Inputs ================= */
+    .date-inputs input {
+        width: 100px !important;
+        text-align:center ;
+        margin-right:5px;
+        font-size:18px !important;
+        padding:60px 0 ;
+        border-radius:10px;
+        border:2px solid #ccc;
+        transition:border 0.2s, box-shadow 0.2s;
+    }
+    .date-inputs input:focus {
+        border-color:#00bfff;
+        box-shadow:0 0 8px rgba(0,191,255,0.3);
+    }
+    .date-inputs label { margin-right:8px; font-weight:600; }
+
+    /* ================= Responsive ================= */
+    @media(max-width:600px){
+        .controls { flex-direction:column; gap:15px; align-items:flex-start; }
+        .controls input[type="text"]{ width:100%; }
+    }
+  </style>
+</head>
+
+<body>
+  <!-- HEADER -->
+  <header>
+    <h1>HỆ THỐNG CHẤM CÔNG KHUÔN MẶT</h1>
+    <nav>
+      <a href="{% url 'index' %}">Chấm công</a>
+      <a href="{% url 'manage' %}">Quản lý nhân viên</a>
+      <a href="{% url 'history' %}" class="active">Lịch sử chấm công</a>
+    </nav>
+  </header>
+
+  <!-- MAIN -->
+  <main>
+    <section class="history-card">
+      <h2>Lịch sử chấm công</h2>
+
+      <div class="controls">
+        <form id="filterDateForm">
+          <label>Chọn ngày:</label>
+          <span class="date-inputs">
+            <input type="text" id="dayInput" placeholder="dd" maxlength="2">
+            /
+            <input type="text" id="monthInput" placeholder="mm" maxlength="2">
+            /
+            <input type="text" id="yearInput" placeholder="yyyy" maxlength="4">
+          </span>
+          <button type="submit" class="primary">Xem</button>
+        </form>
+
+        <form id="searchByIdForm">
+          <label>Nhập ID nhân viên:</label>
+          <input type="text" id="userIdInput" placeholder="vd: id_001">
+          <button type="submit" class="primary">Xem</button>
+        </form>
+      </div>
+
+      <table class="history-table" id="historyTable" data-api-url="{% url 'api_history_by_day' %}">
+        <thead>
+          <tr>
+            <th>Ngày</th>
+            <th>ID</th>
+            <th>Check-in</th>
+            <th>Trạng thái</th>
+            <th>Check-out</th>
+            <th>Trạng thái</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td colspan="6" class="empty">Đang tải dữ liệu...</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="{% static 'attendance/js/history.js' %}?v=11"></script>
+</body>
+</html>

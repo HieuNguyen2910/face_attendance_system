@@ -1,0 +1,33 @@
+/* checkout.css - chỉ cho nút check-out */
+#checkoutBtn {
+  background:#ff8c00;
+  color:white;
+  font-size:22px;
+  font-weight:bold;
+  padding:20px;
+  border:none;
+  border-radius:18px;
+  cursor:pointer;
+  transition: background 0.2s, transform 0.2s, box-shadow 0.2s;
+  box-shadow:0 5px 12px rgba(0,0,0,0.2);
+}
+
+#checkoutBtn:hover:not(:disabled) {
+  background:#e67300;
+  transform:translateY(-3px);
+  box-shadow:0 6px 14px rgba(255,140,0,0.3);
+}
+
+#checkoutBtn:disabled {
+  opacity:0.6;
+  cursor:not-allowed;
+  transform:none;
+  box-shadow:0 3px 8px rgba(0,0,0,0.15);
+}
+
+/* status box riêng */
+#statusBox {
+  font-size:20px;
+  font-weight:600;
+  margin-top:10px;
+}

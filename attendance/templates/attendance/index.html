@@ -1,0 +1,62 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Hệ thống chấm công khuôn mặt</title>
+  <link rel="stylesheet" href="{% static 'attendance/css/index.css' %}">
+</head>
+<body>
+  <!-- HEADER -->
+  <header>
+    <h1>HỆ THỐNG CHẤM CÔNG KHUÔN MẶT</h1>
+    <nav>
+      <a href="{% url 'index' %}">Chấm công</a>
+      <a href="{% url 'manage' %}">Quản lý nhân viên</a>
+      <a href="{% url 'history' %}">Lịch sử chấm công</a>
+    </nav>
+  </header>
+
+  <!-- MAIN -->
+  <main>
+    <div class="content-wrapper">
+      <!-- CAMERA -->
+      <section class="camera">
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="overlay"></canvas>
+      </section>
+
+      <!-- INFO PANEL -->
+      <section class="info-panel">
+        <div class="clock-container">
+          <div id="realtimeClock" class="clock"></div>
+        </div>
+
+        <div class="id-box">
+          <h2>Người được nhận diệnnnnn</h2>
+          <div id="recognizedId" class="unknown">Unknown</div>
+        </div>
+
+        <!-- Button Group Inline -->
+        <div class="button-group-inline">
+          <button id="checkinBtn" class="btn">Check-in</button>
+          <button id="checkoutBtn" class="btn">Check-out</button>
+        </div>
+
+        <div id="statusBox" class="status"></div>
+      </section>
+    </div>
+  </main>
+
+  <!-- SCRIPT URLS -->
+  <script>
+    window.recognizeUrl = "{% url 'api_recognize' %}";
+    window.checkinUrl = "{% url 'api_checkin' %}";
+    window.checkinStatusUrl = "{% url 'api_checkin_status' %}";
+    window.checkoutUrl = "{% url 'api_checkout' %}";
+  </script>
+
+  <!-- SCRIPT MAIN -->
+  <script src="{% static 'attendance/js/camera.js' %}?v=220"></script>
+</body>
+</html>

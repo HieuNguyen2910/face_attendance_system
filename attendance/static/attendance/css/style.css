@@ -1,0 +1,88 @@
+/* ====================== MODAL ====================== */
+.modal-container {
+  background: white;
+  padding: 20px 22px;
+  border-radius: 12px;
+  width: 340px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  animation: modalFadeIn .2s ease;
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+}
+
+@keyframes modalFadeIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ====================== ROW ====================== */
+.modal-row {
+  margin: 10px 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.modal-row label {
+  width: 80px;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+/* ====================== INPUT ====================== */
+.modal-row input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+  transition: .15s;
+}
+
+.modal-row input:focus {
+  border-color: #0078ff;
+  box-shadow: 0 0 0 2px rgba(0,123,255,0.2);
+  outline: none;
+}
+
+/* ====================== BUTTON ====================== */
+.btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: .15s;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #0063d6;
+}
+
+.btn-warning {
+  background: #ff9800;
+  color: white;
+}
+
+.btn-warning:hover {
+  background: #e68900;
+}
+
+/* ====================== ACTIONS ====================== */
+.modal-actions {
+  margin-top: 14px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* ====================== TITLE ====================== */
+.modal-container strong {
+  font-size: 1.1rem;
+  color: #222;
+}

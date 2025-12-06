@@ -1,0 +1,175 @@
+/* ================= Reset & Body ================= */
+* { margin:0; padding:0; box-sizing:border-box; }
+body { 
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background:#f0f2f5; 
+    color:#333; 
+    min-height:100vh; 
+    display:flex; 
+    flex-direction:column; 
+    align-items:center; 
+    overflow-y: scroll;
+}
+
+/* ================= Header ================= */
+header { 
+    width:100%; 
+    background:#1e1e2f; 
+    color:white; 
+    text-align:center; 
+    padding:20px 0; 
+    box-shadow:0 4px 6px rgba(0,0,0,0.1);
+}
+header h1 { font-size:28px; }
+nav { margin-top:10px; }
+nav a { 
+    color:white; 
+    margin:0 20px; 
+    text-decoration:none; 
+    font-weight:600; 
+    font-size:16px; 
+    transition:color 0.2s;
+}
+nav a:hover { color:#00bfff; }
+
+/* ================= Main Layout ================= */
+main { 
+    width:100%; 
+    max-width:1100px; 
+    display:flex; 
+    justify-content:center; 
+    padding:40px 20px; 
+    flex:1;
+}
+.content-wrapper { 
+    display:flex; 
+    gap:50px; 
+    width:100%; 
+    justify-content:center; 
+    align-items:flex-start; 
+}
+
+/* ================= Camera ================= */
+.camera { 
+    position:relative; 
+    width:640px; 
+    height:480px; 
+    border-radius:20px; 
+    overflow:hidden; 
+    background:black; 
+    box-shadow:0 10px 20px rgba(0,0,0,0.25);
+
+}
+.camera video { width:100%; height:100%; object-fit:cover; transform: scaleX(-1) !important;}
+.camera canvas { 
+    position:absolute; 
+    top:0; 
+    left:0; 
+    width:100%; 
+    height:100%; 
+    pointer-events:none;
+    transform: scaleX(-1) !important;
+}
+
+/* ================= Info Panel ================= */
+.info-panel { 
+    display:flex; 
+    flex-direction:column; 
+    justify-content:flex-start; 
+    align-items:center; 
+    gap:40px; 
+    min-width:350px; 
+}
+
+/* ================= Clock ================= */
+.clock { 
+    font-size:66px; 
+    font-weight:bold; 
+    color:#1e1e2f; 
+    background:#fff; 
+    padding:35px 50px; 
+    border-radius:25px; 
+    box-shadow:0 6px 12px rgba(0,0,0,0.15); 
+    text-align:center; 
+    width:100%; 
+}
+
+/* ================= ID Box ================= */
+.id-box { width:100%; text-align:center; }
+.id-box h2 { color:#1e1e2f; font-size:28px; margin-bottom:15px; font-weight:700; }
+#recognizedId { 
+    font-size:44px; 
+    font-weight:bold; 
+    padding:30px 0; 
+    border-radius:20px; 
+    border:4px solid #ccc; 
+    background:#fff; 
+    width:100%; 
+    text-align:center; 
+    transition:all 0.3s ease; 
+    box-shadow:0 6px 12px rgba(0,0,0,0.1);
+}
+#recognizedId.recognized { 
+    color:#1b5e20; 
+    border-color:#1b5e20; 
+    background:#e8f5e9; 
+    box-shadow:0 0 20px rgba(76,175,80,0.5);
+}
+#recognizedId.unknown { 
+    color:#c62828; 
+    border-color:#c62828; 
+    background:#ffebee; 
+    box-shadow:0 0 20px rgba(244,67,54,0.5);
+}
+
+/* ================= Button Group Inline ================= */
+.button-group-inline {
+    display: flex;
+    justify-content: space-between; /* Check-in trái, Check-out phải */
+    gap: 20px;
+    width: 100%;
+}
+.button-group-inline .btn {
+    flex: 1; /* hai nút cùng rộng */
+    padding:20px;
+    font-size:22px;
+    font-weight:bold;
+    border:none;
+    border-radius:18px;
+    color:white;
+    cursor:pointer;
+    transition:background 0.2s, transform 0.2s, box-shadow 0.2s;
+    box-shadow:0 5px 12px rgba(0,0,0,0.2);
+}
+
+/* Check-in Button */
+#checkinBtn { background:#00bfff; }
+#checkinBtn:hover:not(:disabled) { 
+    background:#009acd; 
+    transform:translateY(-3px); 
+    box-shadow:0 6px 14px rgba(0,191,255,0.3); 
+}
+
+/* Check-out Button */
+#checkoutBtn { background:#ff8c00; }
+#checkoutBtn:hover:not(:disabled) { 
+    background:#e67300; 
+    transform:translateY(-3px); 
+    box-shadow:0 6px 14px rgba(255,140,0,0.3); 
+}
+
+/* Disabled Button */
+.button-group-inline .btn:disabled { 
+    cursor:not-allowed; 
+    opacity:0.6; 
+    transform:none; 
+    box-shadow:0 3px 8px rgba(0,0,0,0.15); 
+}
+
+/* ================= Status Box ================= */
+.status { width:100%; text-align:center; font-size:20px; font-weight:600; }
+
+/* ================= Responsive ================= */
+@media(max-width:600px){
+    .button-group-inline { flex-direction: column; gap:15px; }
+}

@@ -1,0 +1,144 @@
+/* ================= Reset & Body ================= */
+* { margin:0; padding:0; box-sizing:border-box; }
+body { 
+    font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    background:#f0f2f5; 
+    color:#333; 
+    min-height:100vh; 
+    display:flex; 
+    flex-direction:column; 
+    align-items:center; 
+}
+
+/* ================= Header ================= */
+header { 
+    width:100%; 
+    background:#1e1e2f; 
+    color:white; 
+    text-align:center; 
+    padding:20px 0; 
+    box-shadow:0 4px 6px rgba(0,0,0,0.1);
+}
+header h1 { 
+    font-size:28px; 
+    font-weight:700; 
+}
+nav { margin-top:10px; }
+nav a { 
+    color:white; 
+    margin:0 20px; 
+    text-decoration:none; 
+    font-weight:600; 
+    font-size:16px; 
+    transition:color 0.2s;
+}
+nav a:hover,
+nav a.active { color:#00bfff; }
+
+/* ================= Main Section ================= */
+main { 
+    width:100%; 
+    max-width:1100px; 
+    display:flex; 
+    justify-content:center; 
+    padding:40px 20px; 
+    flex:1;
+}
+.history-card { 
+    background:#fff; 
+    border-radius:25px; 
+    box-shadow:0 8px 16px rgba(0,0,0,0.15); 
+    padding:40px 50px; 
+    width:100%; 
+    text-align:center; 
+}
+.history-card h2 { 
+    font-size:28px; 
+    color:#1e1e2f; 
+    margin-bottom:30px; 
+    font-weight:700;
+}
+
+/* ================= Date Inputs ================= */
+.date-inputs input {
+    width:500px;
+    text-align:center;
+    margin-right:5px;
+    font-size:16px;
+    padding:6px 0;
+    border-radius:10px;
+    border:2px solid #ccc;
+    transition:border 0.2s, box-shadow 0.2s;
+}
+.date-inputs input:focus {
+    border-color:#00bfff;
+    box-shadow:0 0 8px rgba(0,191,255,0.3);
+}
+.date-inputs label { margin-right:8px; font-weight:600; }
+
+/* ================= Buttons ================= */
+.btn {
+    margin-left:5px;
+    padding:10px 20px;
+    border:none;
+    border-radius:15px;
+    background:#00bfff;
+    color:white;
+    font-weight:600;
+    cursor:pointer;
+    font-size:16px;
+    transition:background 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+.btn:hover:not(:disabled) {
+    background:#009acd;
+    transform:translateY(-2px);
+    box-shadow:0 4px 10px rgba(0,191,255,0.3);
+}
+.btn:disabled {
+    cursor:not-allowed;
+    opacity:0.6;
+    transform:none;
+    box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+/* ================= Table ================= */
+.table-wrapper {
+    margin-top:20px; 
+    overflow-x:auto;
+}
+table {
+    width:100%;
+    border-collapse: collapse;
+    font-size:18px;
+    border-radius:15px;
+    overflow:hidden;
+    box-shadow:0 5px 10px rgba(0,0,0,0.05);
+}
+thead {
+    background-color:#00bfff;
+    color:white;
+}
+thead th {
+    padding:14px 200px;
+    text-align:left;
+    font-weight:600;
+}
+tbody tr {
+    background-color:#fff;
+    transition:background-color 0.2s;
+}
+tbody tr:nth-child(even) { background-color:#f7f9fb; }
+tbody tr:hover { background-color:#eaf7ff; }
+tbody td {
+    padding:12px 200px;
+    color:#333;
+    border-bottom:1px solid #eee;
+    text-align:center;
+}
+td.empty {
+    text-align:center;
+    color:#777;
+    font-style:italic;
+    padding:25px;
+    background:#f9f9f9;
+}

@@ -1,4 +1,4 @@
-# Gender and Age Recognition system
+# Face Attendance system
 Gender and Age Recognition System automatically detects faces and predicts gender and age from images, videos, and real-time webcam streams using deep learning models.
 
 ## Table of Contents
@@ -15,15 +15,15 @@ Make sure you have **Python 3.9** installed. Then install the required dependenc
 1. Clone the repository
 
 ```bash
-git clone https://github.com/HieuNguyen2910/Gender_and_Age_Recognition
-cd Gender_and_Age_Recognition
+git clone https://github.com/HieuNguyen2910/face_attendance_system
+cd face_attendance_system
 ```
 
 2. Create and activate Conda environment
 
 ```bash
-conda create -n agegender python=3.9 -y
-conda activate agegender
+conda create -n attendance python=3.9 -y
+conda activate attendance
 ```
 
 3. Install required dependencies
@@ -53,6 +53,5 @@ open your browser and go to
 
 Below is an example of gender and age prediction on a sample image.
 
-![Demo Result](assets/demo.jpg)
 
 

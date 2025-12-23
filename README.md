@@ -33,7 +33,7 @@ pip install -r requirements.txt
 
 ## Usage
 
-Download the pretrained model weights and place them into the appropriate directory (`weights/`).
+Download the pretrained model weights.
 
 🔗 **Weights download link:**  
 *(https://drive.google.com/drive/u/8/folders/14UvUr8fxxmkPFlnTlX9RN8RCYsFvM-8y)*

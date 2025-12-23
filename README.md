@@ -51,7 +51,6 @@ open your browser and go to
 
 ## Demo
 
-Below is an example of gender and age prediction on a sample image.
 
 
 

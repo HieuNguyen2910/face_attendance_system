@@ -51,6 +51,11 @@ open your browser and go to
 
 ## Demo
 
+Below is an example of Face Attendance on a face.
+
+![Demo Result](assets/demo.jpg)
+
+
 
 
 

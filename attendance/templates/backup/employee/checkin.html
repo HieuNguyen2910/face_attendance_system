@@ -1,0 +1,43 @@
+{% extends "attendance/employee/base_employee.html" %}
+{% load static %}
+
+{% block title %}Chấm Công{% endblock %}
+{% block page_title %}Chấm Công - {{ employee.name }}{% endblock %}
+
+{% block content %}
+<div class="camera-layout">
+    <section class="camera-section">
+        <video id="video" autoplay muted playsinline></video>
+        <canvas id="overlay"></canvas>
+    </section>
+
+    <section class="camera-info-panel">
+        <div class="clock-container">
+            <div id="realtimeClock" class="clock">--:--:--</div>
+        </div>
+
+        <div class="id-box">
+            <h2>Người được nhận diện</h2>
+            <div id="recognizedId" class="unknown">Unknown</div>
+        </div>
+
+        <div class="button-group-inline">
+            <button id="checkinBtn" class="btn" disabled>Check-in</button>
+            <button id="checkoutBtn" class="btn" disabled>Check-out</button>
+        </div>
+
+        <div id="statusBox"></div>
+    </section>
+</div>
+
+<script>
+    window.recognizeUrl      = "{% url 'api_recognize' %}";
+    window.checkinUrl        = "{% url 'api_checkin' %}";
+    window.checkinStatusUrl  = "{% url 'api_checkin_status' %}";
+    window.checkoutUrl       = "{% url 'api_checkout' %}";
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'attendance/js/camera.js' %}"></script>
+{% endblock %}

@@ -31,6 +31,25 @@ conda activate attendance
 pip install -r requirements.txt
 ```
 
+4. Create PostgreSQL database
+```bash
+psql -U postgres -c "CREATE DATABASE attendance_db;"
+```
+
+5. Configure database connection
+```bash
+export POSTGRES_DB=attendance_db
+export POSTGRES_USER=postgres
+export POSTGRES_PASSWORD=your_password
+export POSTGRES_HOST=localhost
+export POSTGRES_PORT=5432
+```
+
+6. Apply migrations
+```bash
+python manage.py migrate
+```
+
 ## Usage
 
 Download the pretrained model weights.
@@ -54,7 +73,6 @@ open your browser and go to
 Below is an example of Face Attendance on a face.
 
 ![Demo Result](assets/demo.jpg)
-
 
 
 

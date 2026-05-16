@@ -1,0 +1,35 @@
+{% extends "attendance/admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}Tạo Admin{% endblock %}
+{% block page_title %}Tạo Admin Mới{% endblock %}
+
+{% block content %}
+<div class="section" style="max-width: 480px;">
+    <h3>Thêm tài khoản Admin</h3>
+
+    {% if error %}
+        <div class="alert alert-error">{{ error }}</div>
+    {% endif %}
+    {% if success %}
+        <div class="alert alert-success">{{ success }}</div>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Tên đăng nhập</label>
+            <input type="text" name="username" placeholder="admin2" required>
+        </div>
+        <div class="form-group">
+            <label>Mật khẩu</label>
+            <input type="password" name="password" placeholder="Ít nhất 6 ký tự" required>
+        </div>
+        <div class="form-group">
+            <label>Xác nhận mật khẩu</label>
+            <input type="password" name="password_confirm" placeholder="Nhập lại mật khẩu" required>
+        </div>
+        <button type="submit" class="btn-primary btn" style="padding: 11px 30px;">Tạo Admin</button>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,72 @@
+{% extends "attendance/admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}Quản lí Nhân viên{% endblock %}
+{% block page_title %}Quản lí Nhân viên{% endblock %}
+
+{% block content %}
+<div class="manage-card">
+    <div style="display:flex; align-items:center; gap:9px; margin-bottom:22px; padding-bottom:16px; border-bottom:1px solid var(--border);">
+        <span style="display:block; width:4px; height:20px; background:linear-gradient(180deg,var(--primary),#60a5fa); border-radius:2px; flex-shrink:0;"></span>
+        <h2 style="font-size:15px; font-weight:700; color:var(--text-primary); margin:0;">Quản lý thông tin nhân viên</h2>
+    </div>
+
+    <!-- Controls: Add button + Dept filter + Search -->
+    <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:18px;">
+        <div style="flex-shrink:0;">
+            <button id="btnAdd" class="btn btn-primary" style="padding:9px 18px; font-size:13.5px; white-space:nowrap;">
+                ➕ Thêm nhân viên mới
+            </button>
+        </div>
+        <div style="flex-shrink:0;">
+            <select id="deptFilter" class="dept-filter-select">
+                <option value="">Tất cả phòng ban</option>
+            </select>
+        </div>
+        <div style="flex:1; min-width:180px;">
+            <input id="searchInput" type="text" class="search-input" placeholder="Tìm theo ID, họ tên, vị trí hoặc phòng ban...">
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="table-responsive">
+        <table class="user-table" id="userTable">
+            <thead>
+                <tr>
+                    <th style="width:14%">ID</th>
+                    <th style="width:24%">Họ tên</th>
+                    <th style="width:20%">Vị trí</th>
+                    <th style="width:22%">Phòng ban</th>
+                    <th style="width:20%; text-align:right;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody id="userTBody">
+                <!-- JS render -->
+            </tbody>
+        </table>
+    </div>
+
+
+</div>
+
+<!-- Modal container -->
+<div id="modalRoot" style="display:none"></div>
+
+<script>
+    window.apiUrls = {
+        listUsers:        "{% url 'api_list_users' %}",
+        deleteUser:       "{% url 'api_delete_user' %}",
+        updateUser:       "{% url 'api_update_user' %}",
+        registerEmployee: "{% url 'api_register_employee' %}",
+        replaceFace:      "{% url 'api_replace_face' %}",
+        detectFace:       "{% url 'api_detect_face' %}",
+        registerFrame:    "{% url 'api_register_frame' %}",
+        clearEmbeddings:  "{% url 'api_clear_embeddings' %}"
+    };
+    window.employeeHistoryUrlTemplate = "{% url 'admin_employee_history' user_id='__ID__' %}";
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'attendance/js/manage.js' %}?v=13"></script>
+{% endblock %}

@@ -1,0 +1,440 @@
+{% extends "attendance/admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Tổng quan{% endblock %}
+
+{% block extra_css %}
+<meta http-equiv="refresh" content="60">
+<style>
+
+/* ── Header Banner ── */
+.dash-header {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 55%, #0ea5e9 100%);
+    border-radius: var(--radius-lg);
+    padding: 22px 28px;
+    margin-bottom: 22px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    position: relative; overflow: hidden;
+    box-shadow: 0 8px 24px rgba(37,99,235,0.22);
+}
+.dash-header::before {
+    content: ''; position: absolute;
+    width: 260px; height: 260px; top: -80px; right: 60px;
+    background: rgba(255,255,255,0.06); border-radius: 50%;
+    pointer-events: none;
+}
+.dash-header::after {
+    content: ''; position: absolute;
+    width: 160px; height: 160px; bottom: -70px; right: -30px;
+    background: rgba(255,255,255,0.04); border-radius: 50%;
+    pointer-events: none;
+}
+.dash-header-left { position: relative; z-index: 1; }
+.dash-greeting {
+    font-size: 20px; font-weight: 800; color: #fff;
+    letter-spacing: -0.3px; margin-bottom: 5px;
+}
+.dash-date {
+    font-size: 13px; color: rgba(255,255,255,0.65);
+    display: flex; align-items: center; gap: 6px;
+}
+.dash-date .material-symbols-outlined { font-size: 15px; font-variation-settings: 'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20; }
+.dash-header-right {
+    position: relative; z-index: 1;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.dash-live-pill {
+    display: flex; align-items: center; gap: 7px;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 100px; padding: 6px 14px;
+    font-size: 12px; font-weight: 600; color: #fff;
+}
+.dash-live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #4ade80; flex-shrink: 0;
+    box-shadow: 0 0 0 2px rgba(74,222,128,0.3);
+    animation: dashPulse 2.2s ease-in-out infinite;
+}
+@keyframes dashPulse {
+    0%,100% { box-shadow: 0 0 0 2px rgba(74,222,128,0.3); }
+    50%      { box-shadow: 0 0 0 5px rgba(74,222,128,0.08); }
+}
+.btn-refresh {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: var(--radius-sm);
+    padding: 7px 14px; font-size: 13px; font-weight: 600;
+    color: #fff; cursor: pointer; text-decoration: none;
+    font-family: inherit;
+    transition: background 0.16s;
+}
+.btn-refresh:hover { background: rgba(255,255,255,0.22); }
+.btn-refresh .material-symbols-outlined { font-size: 16px; font-variation-settings: 'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20; }
+
+/* ── KPI Grid ── */
+.kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 22px;
+}
+.kpi-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    position: relative; overflow: hidden;
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+.kpi-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.kpi-card::after {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+.kpi-card.kpi-blue::after   { background: linear-gradient(90deg, #2563eb, #60a5fa); }
+.kpi-card.kpi-teal::after   { background: linear-gradient(90deg, #0ea5e9, #38bdf8); }
+.kpi-card.kpi-green::after  { background: linear-gradient(90deg, #10b981, #34d399); }
+.kpi-card.kpi-orange::after { background: linear-gradient(90deg, #f59e0b, #fbbf24); }
+
+.kpi-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.kpi-icon {
+    width: 44px; height: 44px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.kpi-icon .material-symbols-outlined {
+    font-size: 22px;
+    font-variation-settings: 'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 24;
+}
+.kpi-card.kpi-blue   .kpi-icon { background: #eff6ff; color: #2563eb; }
+.kpi-card.kpi-teal   .kpi-icon { background: #e0f2fe; color: #0ea5e9; }
+.kpi-card.kpi-green  .kpi-icon { background: #dcfce7; color: #10b981; }
+.kpi-card.kpi-orange .kpi-icon { background: #fef3c7; color: #d97706; }
+
+.kpi-number {
+    font-size: 30px; font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -1px; line-height: 1;
+    margin-bottom: 3px;
+}
+.kpi-label {
+    font-size: 11px; font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ── Bottom 2-col layout ── */
+.dash-grid {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    align-items: start;
+}
+
+/* ── Schedule Card ── */
+.sch-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+.sch-card-head {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex; align-items: center; gap: 9px;
+}
+.sch-card-head .material-symbols-outlined {
+    font-size: 18px; color: var(--primary);
+    font-variation-settings: 'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20;
+}
+.sch-card-title {
+    font-size: 13px; font-weight: 700; color: var(--text-primary);
+}
+.sch-card-body { padding: 18px 20px; }
+
+.time-field { margin-bottom: 14px; }
+.time-field label {
+    display: block; font-size: 11px; font-weight: 600;
+    color: var(--text-muted); text-transform: uppercase;
+    letter-spacing: 0.5px; margin-bottom: 5px;
+}
+.time-input-wrap { position: relative; }
+.time-input-wrap .material-symbols-outlined {
+    position: absolute; left: 10px; top: 50%; transform: translateY(-50%);
+    font-size: 16px; color: var(--text-muted);
+    font-variation-settings: 'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20;
+    pointer-events: none;
+}
+.time-input-wrap input[type="time"] {
+    width: 100%; padding: 9px 12px 9px 34px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-size: 14px; font-family: inherit;
+    color: var(--text-primary); background: var(--bg);
+    outline: none;
+    transition: border-color var(--transition), box-shadow var(--transition);
+}
+.time-input-wrap input[type="time"]:focus {
+    border-color: var(--primary); background: #fff;
+    box-shadow: 0 0 0 3px var(--primary-muted);
+}
+.sch-save-btn {
+    width: 100%; display: flex; align-items: center; justify-content: center;
+    gap: 7px; margin-top: 4px;
+}
+.sch-save-btn .material-symbols-outlined { font-size: 16px; font-variation-settings: 'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20; }
+
+.sch-note {
+    font-size: 12px; color: var(--text-muted);
+    background: var(--bg); border-radius: var(--radius-sm);
+    padding: 10px 12px; border: 1px solid var(--border-light);
+    line-height: 1.65; margin-top: 14px;
+}
+.sch-note strong { color: var(--text-secondary); }
+
+/* ── Attendance Table Card ── */
+.att-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+.att-card-head {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex; align-items: center; justify-content: space-between;
+}
+.att-card-title {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 13px; font-weight: 700; color: var(--text-primary);
+}
+.att-card-title .material-symbols-outlined {
+    font-size: 18px; color: var(--primary);
+    font-variation-settings: 'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20;
+}
+.att-badge {
+    font-size: 11px; font-weight: 700;
+    background: var(--primary-muted); color: var(--primary);
+    padding: 3px 11px; border-radius: 100px;
+}
+
+/* Empty state with Material Symbol */
+.empty-state .ms-empty {
+    font-size: 44px; color: var(--text-muted); opacity: 0.35;
+    font-variation-settings: 'FILL' 0,'wght' 200,'GRAD' 0,'opsz' 48;
+    margin-bottom: 8px;
+}
+
+/* ── Dark mode overrides ── */
+html.dark .kpi-card,
+html.dark .sch-card,
+html.dark .att-card { background: #1e293b; }
+
+html.dark .kpi-card.kpi-blue  .kpi-icon { background: rgba(37,99,235,0.18); }
+html.dark .kpi-card.kpi-teal  .kpi-icon { background: rgba(14,165,233,0.18); }
+html.dark .kpi-card.kpi-green .kpi-icon { background: rgba(16,185,129,0.18); }
+html.dark .kpi-card.kpi-orange .kpi-icon { background: rgba(245,158,11,0.18); }
+
+html.dark .sch-note { background: #0f172a; border-color: #334155; }
+html.dark .time-input-wrap input[type="time"] {
+    background: #0f172a; color: #f1f5f9; border-color: #334155;
+}
+html.dark .time-input-wrap input[type="time"]:focus { background: #1e293b; }
+
+/* ── Responsive ── */
+@media (max-width: 1180px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 960px) {
+    .dash-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+    .kpi-number { font-size: 28px; }
+    .dash-header { padding: 16px 18px; flex-direction: column; align-items: flex-start; gap: 12px; }
+    .dash-header-right { width: 100%; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Header Banner -->
+<div class="dash-header">
+    <div class="dash-header-left">
+        <div class="dash-greeting">Tổng quan hôm nay</div>
+        <div class="dash-date">
+            <span class="material-symbols-outlined">calendar_today</span>
+            <span id="dashDateStr">Đang tải...</span>
+        </div>
+    </div>
+    <div class="dash-header-right">
+        <div class="dash-live-pill">
+            <span class="dash-live-dot"></span>
+            Trực tiếp &nbsp;·&nbsp; làm mới sau <span id="countdown" style="font-variant-numeric:tabular-nums; min-width:20px; display:inline-block; text-align:right;">60</span>s
+        </div>
+        <a href="{% url 'admin_dashboard' %}" class="btn-refresh">
+            <span class="material-symbols-outlined">refresh</span>
+            Làm mới
+        </a>
+    </div>
+</div>
+
+<!-- KPI Cards -->
+<div class="kpi-grid">
+    <div class="kpi-card kpi-blue">
+        <div class="kpi-row">
+            <div>
+                <div class="kpi-number">{{ total_employees }}</div>
+                <div class="kpi-label">Tổng Nhân viên</div>
+            </div>
+            <div class="kpi-icon"><span class="material-symbols-outlined">group</span></div>
+        </div>
+    </div>
+    <div class="kpi-card kpi-teal">
+        <div class="kpi-row">
+            <div>
+                <div class="kpi-number">{{ today_checkins }}</div>
+                <div class="kpi-label">Check-in Hôm nay</div>
+            </div>
+            <div class="kpi-icon"><span class="material-symbols-outlined">how_to_reg</span></div>
+        </div>
+    </div>
+    <div class="kpi-card kpi-green">
+        <div class="kpi-row">
+            <div>
+                <div class="kpi-number">{{ on_time_count }}</div>
+                <div class="kpi-label">Đúng giờ</div>
+            </div>
+            <div class="kpi-icon"><span class="material-symbols-outlined">check_circle</span></div>
+        </div>
+    </div>
+    <div class="kpi-card kpi-orange">
+        <div class="kpi-row">
+            <div>
+                <div class="kpi-number">{{ late_count }}</div>
+                <div class="kpi-label">Đi muộn</div>
+            </div>
+            <div class="kpi-icon"><span class="material-symbols-outlined">schedule</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom: Schedule + Attendance -->
+<div class="dash-grid">
+
+    <!-- Schedule Card -->
+    <div class="sch-card">
+        <div class="sch-card-head">
+            <span class="material-symbols-outlined">tune</span>
+            <span class="sch-card-title">Cài đặt giờ làm việc</span>
+        </div>
+        <div class="sch-card-body">
+            <form method="post" action="{% url 'admin_update_schedule' %}">
+                {% csrf_token %}
+                <div class="time-field">
+                    <label>Giờ vào làm</label>
+                    <div class="time-input-wrap">
+                        <span class="material-symbols-outlined">login</span>
+                        <input type="time" name="start_time" value="{{ schedule.start_time|time:'H:i' }}" required>
+                    </div>
+                </div>
+                <div class="time-field">
+                    <label>Giờ tan làm</label>
+                    <div class="time-input-wrap">
+                        <span class="material-symbols-outlined">logout</span>
+                        <input type="time" name="end_time" value="{{ schedule.end_time|time:'H:i' }}" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary sch-save-btn">
+                    <span class="material-symbols-outlined">save</span>
+                    Lưu cài đặt
+                </button>
+            </form>
+            <div class="sch-note">
+                Check-in sau <strong>{{ schedule.start_time|time:"H:i" }}</strong> tính là <strong>Muộn</strong>.
+                Check-out trước <strong>{{ schedule.end_time|time:"H:i" }}</strong> tính là <strong>Về sớm</strong>.
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance Table -->
+    <div class="att-card">
+        <div class="att-card-head">
+            <div class="att-card-title">
+                <span class="material-symbols-outlined">fact_check</span>
+                Chấm công hôm nay
+            </div>
+            <span class="att-badge">{{ today_attendance|length }} bản ghi</span>
+        </div>
+        <div class="table-responsive">
+            <table class="attendance-table">
+                <thead>
+                    <tr>
+                        <th>Mã NV</th>
+                        <th>Tên</th>
+                        <th>Vị trí</th>
+                        <th>Phòng ban</th>
+                        <th>Check-in</th>
+                        <th>Trạng thái</th>
+                        <th>Check-out</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in today_attendance %}
+                    <tr>
+                        <td><span class="employee-id">{{ record.user.user_id }}</span></td>
+                        <td>{{ record.user.name }}</td>
+                        <td>{{ record.user.position }}</td>
+                        <td>{{ record.user.department|default:"—" }}</td>
+                        <td class="time-cell">{{ record.checkin|time:"H:i:s" }}</td>
+                        <td>
+                            <span class="status {% if record.status_in == 'Đúng giờ' %}on-time{% else %}late{% endif %}">
+                                {{ record.status_in }}
+                            </span>
+                        </td>
+                        <td class="time-cell">{{ record.checkout|time:"H:i:s"|default:"—" }}</td>
+                        <td><span class="status">{{ record.status_out|default:"—" }}</span></td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="empty">
+                            <div class="empty-state">
+                                <span class="material-symbols-outlined ms-empty">event_busy</span>
+                                <div class="empty-state-text">Chưa có dữ liệu chấm công hôm nay</div>
+                                <div class="empty-state-sub">Dữ liệu sẽ hiển thị khi nhân viên check-in</div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+(function () {
+    /* Date string */
+    var VI_DAYS = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
+    var now = new Date();
+    var str = VI_DAYS[now.getDay()] + ', ' + now.getDate() + ' tháng ' + (now.getMonth()+1) + ' năm ' + now.getFullYear();
+    document.getElementById('dashDateStr').textContent = str;
+
+    /* Countdown */
+    var n = 60, el = document.getElementById('countdown');
+    setInterval(function () { n--; if (n < 0) n = 59; el.textContent = n; }, 1000);
+})();
+</script>
+
+{% endblock %}

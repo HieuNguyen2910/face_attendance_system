@@ -1,0 +1,51 @@
+{% extends "attendance/admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}Lịch sử Chấm công{% endblock %}
+{% block page_title %}Lịch sử Chấm công{% endblock %}
+
+{% block content %}
+<div class="history-card">
+    <h2>Lịch sử chấm công</h2>
+
+    <div class="controls">
+        <form id="filterDateForm">
+            <label style="font-weight:600; margin-right:6px;">Chọn ngày:</label>
+            <span class="date-inputs">
+                <input type="text" id="dayInput" placeholder="dd" maxlength="2">
+                /
+                <input type="text" id="monthInput" placeholder="mm" maxlength="2">
+                /
+                <input type="text" id="yearInput" placeholder="yyyy" maxlength="4">
+            </span>
+            <button type="submit" class="primary" style="margin-left:8px; padding:8px 20px;">Xem</button>
+        </form>
+
+        <form id="searchByIdForm">
+            <label style="font-weight:600; margin-right:6px;">Nhập ID nhân viên:</label>
+            <input type="text" id="userIdInput" placeholder="vd: id_001">
+            <button type="submit" class="primary" style="margin-left:8px; padding:8px 20px;">Xem</button>
+        </form>
+    </div>
+
+    <table class="history-table" id="historyTable" data-api-url="{% url 'api_history_by_day' %}">
+        <thead>
+            <tr>
+                <th>Ngày</th>
+                <th>ID</th>
+                <th>Check-in</th>
+                <th>Trạng thái</th>
+                <th>Check-out</th>
+                <th>Trạng thái</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr><td colspan="6" class="empty">Đang tải dữ liệu...</td></tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'attendance/js/history.js' %}?v=11"></script>
+{% endblock %}

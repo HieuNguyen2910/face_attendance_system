@@ -1,0 +1,135 @@
+{% extends "attendance/employee/base_employee.html" %}
+{% load static %}
+
+{% block title %}Lịch sử Chấm công{% endblock %}
+{% block page_title %}Lịch sử Chấm công{% endblock %}
+
+{% block content %}
+<style>
+.hist-input {
+    height: 36px;
+    padding: 0 11px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color .18s;
+    box-sizing: border-box;
+}
+.hist-input:focus { border-color: var(--primary); }
+</style>
+
+<div class="section">
+    <div class="section-header" style="flex-wrap:wrap; gap:10px;">
+        <h3 class="section-title">Lịch sử của {{ employee.name }}</h3>
+
+        <!-- Filter controls -->
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <label style="font-size:12.5px; color:var(--text-muted); white-space:nowrap;">Tháng</label>
+            <select id="filterMonthSel" class="hist-input" style="width:120px;">
+                <option value="">Tất cả</option>
+                <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
+                <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
+                <option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+                <option value="7">Tháng 7</option><option value="8">Tháng 8</option>
+                <option value="9">Tháng 9</option><option value="10">Tháng 10</option>
+                <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+            </select>
+            <input type="number" id="filterYearInp" class="hist-input" placeholder="Năm"
+                   min="2020" max="2099" style="width:84px;">
+            <button id="btnApplyFilter" class="btn btn-primary"
+                    style="height:36px; padding:0 16px; font-size:13px;">Lọc</button>
+            <button id="btnFilterAll" class="btn btn-outline"
+                    style="height:36px; padding:0 14px; font-size:13px;">Tất cả</button>
+            <span id="recordCount" style="font-size:12px; color:var(--text-muted);">{{ history|length }} bản ghi</span>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Ngày</th>
+                    <th>Check-in</th>
+                    <th>Trạng thái Check-in</th>
+                    <th>Check-out</th>
+                    <th>Trạng thái Check-out</th>
+                </tr>
+            </thead>
+            <tbody id="empHistTBody">
+                {% for record in history %}
+                <tr data-year="{{ record.date|date:'Y' }}" data-month="{{ record.date|date:'n' }}">
+                    <td>{{ record.date|date:"d-m-Y" }}</td>
+                    <td class="time-cell">{{ record.checkin|time:"H:i:s"|default:"—" }}</td>
+                    <td>
+                        <span class="status {% if record.status_in == 'Đúng giờ' %}on-time{% elif record.status_in == 'Muộn' %}late{% endif %}">
+                            {{ record.status_in|default:"—" }}
+                        </span>
+                    </td>
+                    <td class="time-cell">{{ record.checkout|time:"H:i:s"|default:"—" }}</td>
+                    <td><span class="status">{{ record.status_out|default:"—" }}</span></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="empty">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <div class="empty-state-text">Chưa có dữ liệu chấm công</div>
+                        <div class="empty-state-sub">Lịch sử sẽ hiển thị sau khi bạn check-in lần đầu</div>
+                    </div>
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+(function () {
+    const tbody    = document.getElementById('empHistTBody');
+    const monthSel = document.getElementById('filterMonthSel');
+    const yearInp  = document.getElementById('filterYearInp');
+    const countEl  = document.getElementById('recordCount');
+    const allRows  = Array.from(tbody.querySelectorAll('tr[data-year]'));
+
+    function applyFilter(month, year) {
+        let visible = 0;
+        allRows.forEach(tr => {
+            const ok = (!year  || tr.dataset.year  === String(year))
+                    && (!month || tr.dataset.month === String(month));
+            tr.style.display = ok ? '' : 'none';
+            if (ok) visible++;
+        });
+        let noDataRow = tbody.querySelector('#noDataRow');
+        if (visible === 0 && allRows.length > 0) {
+            if (!noDataRow) {
+                noDataRow = document.createElement('tr');
+                noDataRow.id = 'noDataRow';
+                noDataRow.innerHTML = '<td colspan="5" class="empty">Không có dữ liệu trong tháng này</td>';
+                tbody.appendChild(noDataRow);
+            }
+        } else if (noDataRow) {
+            noDataRow.remove();
+        }
+        countEl.textContent = visible + ' bản ghi';
+    }
+
+    // Pre-fill current month/year and auto-apply on load
+    const now = new Date();
+    monthSel.value = now.getMonth() + 1;
+    yearInp.value  = now.getFullYear();
+    applyFilter(monthSel.value, yearInp.value);
+
+    document.getElementById('btnApplyFilter').addEventListener('click', () => {
+        applyFilter(monthSel.value, yearInp.value);
+    });
+
+    document.getElementById('btnFilterAll').addEventListener('click', () => {
+        monthSel.value = '';
+        yearInp.value  = '';
+        applyFilter('', '');
+    });
+})();
+</script>
+{% endblock %}

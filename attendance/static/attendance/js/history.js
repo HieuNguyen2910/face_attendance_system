@@ -1,101 +1,246 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const table = document.querySelector('#historyTable');
-  const tableBody = table.querySelector('tbody');
-  const apiUrl = table.dataset.apiUrl;
+  const urls  = window.historyApiUrls;
+  const thead = document.getElementById('historyThead');
+  const tbody = document.getElementById('historyTBody');
 
-  const dayInput = document.getElementById('dayInput');
-  const monthInput = document.getElementById('monthInput');
-  const yearInput = document.getElementById('yearInput');
+  // ── Table header templates ────────────────────────────────
+  const DAY_HEADERS = `<tr>
+    <th>Ngày</th><th>ID</th><th>Họ tên</th>
+    <th>Check-in</th><th>Trạng thái vào</th>
+    <th>Check-out</th><th>Trạng thái ra</th>
+  </tr>`;
 
-  // Hàm ghép dd/mm/yyyy từ 3 input
-  function getDateString() {
-    return `${dayInput.value.padStart(2,'0')}/${monthInput.value.padStart(2,'0')}/${yearInput.value}`;
-  }
+  const MONTH_HEADERS = `<tr>
+    <th>Họ tên</th><th>ID</th>
+    <th>Số ngày chấm công</th>
+    <th>Số ngày đúng giờ</th>
+    <th id="thLate" style="cursor:pointer; user-select:none; white-space:nowrap;">
+      Số ngày muộn <span id="lateSortIcon">↕</span>
+    </th>
+    <th>Lịch sử</th>
+  </tr>`;
 
-  // Hàm chuyển dd/mm/yyyy -> yyyy-mm-dd
-  function formatDateForApi(dateStr) {
-    const parts = dateStr.split('/');
-    if (parts.length !== 3) return null;
-    return `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
-  }
+  // ── State ─────────────────────────────────────────────────
+  let currentMode       = 'day';
+  let lateSortAsc       = true;
+  let cachedDayData     = null;   // raw records for day view
+  let cachedMonthData   = null;   // aggregated per-employee for month view
+  let searchQuery       = '';
 
-  // Điền ngày hiện tại khi load trang
-  const now = new Date();
-  dayInput.value = now.getDate().toString().padStart(2,'0');
-  monthInput.value = (now.getMonth()+1).toString().padStart(2,'0');
-  yearInput.value = now.getFullYear();
+  // ── Mode tabs ─────────────────────────────────────────────
+  document.querySelectorAll('.hist-mode-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      const mode = tab.dataset.mode;
+      if (mode === currentMode) return;
+      currentMode = mode;
 
-  // ================= Load dữ liệu theo ngày =================
-  async function loadHistoryByDay() {
-    const dateStr = getDateString();
-    const apiDate = formatDateForApi(dateStr);
-    if (!apiDate) {
-      tableBody.innerHTML = '<tr><td colspan="6" class="empty">Ngày không hợp lệ</td></tr>';
-      return;
-    }
+      document.querySelectorAll('.hist-mode-tab').forEach(t => {
+        const active = t === tab;
+        t.style.borderBottomColor = active ? 'var(--primary)' : 'transparent';
+        t.style.color      = active ? 'var(--primary)' : 'var(--text-muted)';
+        t.style.fontWeight = active ? '600' : '400';
+      });
+      document.querySelectorAll('.hist-ctrl').forEach(c => {
+        c.style.display = c.dataset.ctrlfor === mode ? 'flex' : 'none';
+      });
 
-    tableBody.innerHTML = '<tr><td colspan="6" class="empty">Đang tải dữ liệu...</td></tr>';
+      // clear search on tab switch
+      document.getElementById('searchInput').value = '';
+      searchQuery = '';
 
-    try {
-      const res = await fetch(`${apiUrl}?date=${encodeURIComponent(apiDate)}`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-
-      tableBody.innerHTML = '';
-      if (data.status === 'ok' && data.data && data.data.length > 0) {
-        for (const info of data.data) {
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td>${dateStr}</td>
-            <td>${info.user_id}</td>
-            <td>${info.checkin || '-'}</td>
-            <td>${info.status_in || '-'}</td>
-            <td>${info.checkout || '-'}</td>
-            <td>${info.status_out || '-'}</td>
-          `;
-          tableBody.appendChild(row);
-        }
+      if (mode === 'day') {
+        thead.innerHTML = DAY_HEADERS;
+        loadByDay();
       } else {
-        tableBody.innerHTML = '<tr><td colspan="6" class="empty">Chưa có dữ liệu</td></tr>';
+        thead.innerHTML = MONTH_HEADERS;
+        attachLateSort();
+        loadByMonth();
       }
-    } catch (err) {
-      console.error(err);
-      tableBody.innerHTML = '<tr><td colspan="6" class="empty">Lỗi tải dữ liệu</td></tr>';
+    });
+  });
+
+  // ── Late-sort ─────────────────────────────────────────────
+  function attachLateSort() {
+    const th = document.getElementById('thLate');
+    if (th) {
+      th.addEventListener('click', () => {
+        lateSortAsc = !lateSortAsc;
+        document.getElementById('lateSortIcon').textContent = lateSortAsc ? '↑' : '↓';
+        if (cachedMonthData) renderMonthRows(applyMonthSearch(cachedMonthData));
+      });
     }
   }
 
-  // Load mặc định ngày hôm nay
-  loadHistoryByDay();
+  // ── Helpers ───────────────────────────────────────────────
+  function statusClass(s) {
+    if (s === 'Đúng giờ') return 'status on-time';
+    if (s === 'Muộn')     return 'status late';
+    return 'status';
+  }
+  function loading(cols) {
+    tbody.innerHTML = `<tr><td colspan="${cols}" class="empty">Đang tải dữ liệu...</td></tr>`;
+  }
+  function noData(cols, msg) {
+    tbody.innerHTML = `<tr><td colspan="${cols}" class="empty">${msg || 'Không có dữ liệu'}</td></tr>`;
+  }
 
-  // Xem theo ngày
-  document.getElementById('filterDateForm').addEventListener('submit', e => {
-    e.preventDefault();
-    loadHistoryByDay();
-  });
+  // ── Search filters ────────────────────────────────────────
+  function applyDaySearch(data) {
+    if (!searchQuery) return data;
+    const q = searchQuery.toLowerCase();
+    return data.filter(r =>
+      (r.user_id || '').toLowerCase().includes(q) ||
+      (r.name    || '').toLowerCase().includes(q)
+    );
+  }
 
-  // Xem theo ID
-  document.getElementById('searchByIdForm').addEventListener('submit', async e => {
-      e.preventDefault();
-      const userId = document.getElementById('userIdInput').value.trim();
-      if (!userId) return;
+  function applyMonthSearch(employees) {
+    if (!searchQuery) return employees;
+    const q = searchQuery.toLowerCase();
+    return employees.filter(e =>
+      (e.user_id || '').toLowerCase().includes(q) ||
+      (e.name    || '').toLowerCase().includes(q)
+    );
+  }
 
-      try {
-          // Gọi API đúng URL
-          const res = await fetch(`/attendance/api/check_user/${encodeURIComponent(userId)}/`);
-          const data = await res.json();
+  // ── Render: day view ──────────────────────────────────────
+  function renderDayRows(data, dateStr) {
+    if (!data || data.length === 0) { noData(7); return; }
+    tbody.innerHTML = '';
+    for (const r of data) {
+      const d = r._dateDisplay || dateStr || '';
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${d}</td>
+        <td>${r.user_id || ''}</td>
+        <td>${r.name    || ''}</td>
+        <td class="time-cell">${r.checkin  || '—'}</td>
+        <td><span class="${statusClass(r.status_in)}">${r.status_in  || '—'}</span></td>
+        <td class="time-cell">${r.checkout || '—'}</td>
+        <td><span class="status">${r.status_out || '—'}</span></td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
 
-          if (data.exists) {
-              // ID tồn tại → chuyển sang trang chi tiết
-              window.location.href = `/history/id/${encodeURIComponent(userId)}/`;
-          } else {
-              // ID không tồn tại → báo lỗi
-              alert('ID không tồn tại');
-          }
-      } catch (err) {
-          console.error(err);
-          alert('Lỗi kết nối tới server');
+  // ── Render: month summary view ────────────────────────────
+  function aggregateMonth(records) {
+    const map = {};
+    for (const r of records) {
+      if (!map[r.user_id]) {
+        map[r.user_id] = { user_id: r.user_id, name: r.name, total: 0, onTime: 0, late: 0 };
       }
+      const e = map[r.user_id];
+      e.total++;
+      if (r.status_in === 'Đúng giờ') e.onTime++;
+      if (r.status_in === 'Muộn')     e.late++;
+    }
+    return Object.values(map);
+  }
+
+  function renderMonthRows(employees) {
+    if (!employees || employees.length === 0) { noData(6); return; }
+    const sorted = [...employees].sort((a, b) =>
+      lateSortAsc ? a.late - b.late : b.late - a.late
+    );
+    tbody.innerHTML = '';
+    for (const e of sorted) {
+      const histUrl = urls.employeeHistory.replace('__ID__', encodeURIComponent(e.user_id));
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:500;">${e.name    || ''}</td>
+        <td>${e.user_id}</td>
+        <td style="text-align:center;">${e.total}</td>
+        <td style="text-align:center;"><span class="status on-time">${e.onTime}</span></td>
+        <td style="text-align:center;"><span class="status${e.late > 0 ? ' late' : ''}">${e.late}</span></td>
+        <td style="text-align:center;">
+          <a href="${histUrl}" class="btn btn-outline"
+             style="padding:4px 12px; font-size:12px; white-space:nowrap;">Xem</a>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  // ── Load by day ───────────────────────────────────────────
+  async function loadByDay() {
+    const dd   = String(document.getElementById('dayInput').value || '').padStart(2, '0');
+    const mm   = String(document.getElementById('monthDaySelect').value).padStart(2, '0');
+    const yyyy = document.getElementById('yearDayInput').value;
+    if (!dd || dd === '00' || !mm || !yyyy || String(yyyy).length !== 4) {
+      noData(7, 'Ngày không hợp lệ'); return;
+    }
+    const apiDate    = `${yyyy}-${mm}-${dd}`;
+    const displayDate = `${dd}/${mm}/${yyyy}`;
+    loading(7);
+    try {
+      const res  = await fetch(`${urls.byDay}?date=${encodeURIComponent(apiDate)}`);
+      const data = await res.json();
+      if (data.status === 'ok') {
+        // Attach display date to each record for search re-render
+        cachedDayData = (data.data || []).map(r => ({ ...r, _dateDisplay: displayDate }));
+        renderDayRows(applyDaySearch(cachedDayData));
+      } else {
+        cachedDayData = [];
+        noData(7);
+      }
+    } catch { noData(7, 'Lỗi kết nối'); }
+  }
+
+  // ── Load by month ─────────────────────────────────────────
+  async function loadByMonth() {
+    const month = document.getElementById('monthSelect').value;
+    const year  = document.getElementById('yearMonthInput').value;
+    if (!month || !year) { noData(6, 'Vui lòng chọn tháng và năm'); return; }
+    loading(6);
+    cachedMonthData = null;
+    lateSortAsc = true;
+    const icon = document.getElementById('lateSortIcon');
+    if (icon) icon.textContent = '↕';
+    try {
+      const res  = await fetch(`${urls.byMonth}?month=${month}&year=${encodeURIComponent(year)}`);
+      const data = await res.json();
+      if (data.status === 'ok') {
+        cachedMonthData = aggregateMonth(data.data || []);
+        renderMonthRows(applyMonthSearch(cachedMonthData));
+      } else {
+        noData(6);
+      }
+    } catch { noData(6, 'Lỗi kết nối'); }
+  }
+
+  // ── Search input ──────────────────────────────────────────
+  document.getElementById('searchInput').addEventListener('input', function () {
+    searchQuery = this.value.trim();
+    if (currentMode === 'day' && cachedDayData) {
+      renderDayRows(applyDaySearch(cachedDayData));
+    } else if (currentMode === 'month' && cachedMonthData) {
+      renderMonthRows(applyMonthSearch(cachedMonthData));
+    }
   });
 
+  // ── Pre-fill current date/month ───────────────────────────
+  const now = new Date();
+  document.getElementById('dayInput').value       = now.getDate();
+  document.getElementById('monthDaySelect').value = now.getMonth() + 1;
+  document.getElementById('yearDayInput').value   = now.getFullYear();
+  document.getElementById('monthSelect').value    = now.getMonth() + 1;
+  document.getElementById('yearMonthInput').value = now.getFullYear();
 
+  // Auto-load today on page open
+  loadByDay();
+
+  // ── Form handlers ─────────────────────────────────────────
+  document.getElementById('filterDayForm').addEventListener('submit', e => {
+    e.preventDefault();
+    document.getElementById('searchInput').value = '';
+    searchQuery = '';
+    loadByDay();
+  });
+  document.getElementById('filterMonthForm').addEventListener('submit', e => {
+    e.preventDefault();
+    document.getElementById('searchInput').value = '';
+    searchQuery = '';
+    loadByMonth();
+  });
 });

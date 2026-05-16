@@ -1,14 +1,13 @@
-# attendance/views.py
-
 import json
-from datetime import datetime
 
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponseBadRequest
 from django.views.decorators.csrf import csrf_exempt
+from django.utils import timezone
 
-from .models import Employee, Embedding, Attendance
+from .models import Employee, Embedding, Attendance, WorkSchedule
 from . import face_recognition as fr
+from . import consumers as _consumers
 
 
 # ========== VIEW HTML ==========
@@ -66,6 +65,16 @@ def api_recognize(request):
 
 
 @csrf_exempt
+def api_detect_face(request):
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required")
+    if "image" not in request.FILES:
+        return JsonResponse({"status": "no_face"})
+    img = request.FILES["image"].read()
+    return JsonResponse(fr.detect_face_size_for_preview(img))
+
+
+@csrf_exempt
 def api_register(request):
     """
     Đăng ký embedding cho nhân viên (không thêm metadata).
@@ -101,6 +110,7 @@ def api_register(request):
     return JsonResponse({
         "status": "ok",
         "saved_vectors": len(vectors),
+        "message": f"Đã lưu {len(vectors)} embedding cho {user_id}",
         "user_id": user_id
     })
 
@@ -108,7 +118,8 @@ def api_register(request):
 @csrf_exempt
 def api_register_employee(request):
     """
-    Đăng ký nhân viên mới + embeddings
+    Tạo/cập nhật nhân viên. Nếu có images → thay toàn bộ embedding.
+    Nếu không có images → chỉ tạo/cập nhật thông tin (embedding thu sau qua api_register_frame).
     """
     if request.method != "POST":
         return HttpResponseBadRequest("POST required")
@@ -116,24 +127,45 @@ def api_register_employee(request):
     user_id = request.POST.get("user_id")
     name = request.POST.get("name")
     position = request.POST.get("position")
+    department = request.POST.get("department", "").strip()
     images = request.FILES.getlist("image")
 
-    if not (user_id and name and position and images):
+    if not (user_id and name and position):
         return JsonResponse({"status": "fail", "message": "Missing fields"})
 
     user, _ = Employee.objects.get_or_create(
         user_id=user_id,
-        defaults={"name": name, "position": position}
+        defaults={"name": name, "position": position, "department": department}
     )
-
-    # update metadata nếu user đã tồn tại
     user.name = name
     user.position = position
+    user.department = department
     user.save()
 
-    # Xóa embeddings cũ
-    Embedding.objects.filter(user=user).delete()
+    # Tạo/cập nhật tài khoản CustomUser nếu có password
+    password = request.POST.get("password", "").strip()
+    if password:
+        from django.contrib.auth.hashers import make_password
+        from .models import CustomUser
+        CustomUser.objects.update_or_create(
+            employee=user,
+            defaults={
+                "username": user_id,
+                "password": make_password(password),
+                "role": "employee",
+                "is_active": True,
+            }
+        )
 
+    if not images:
+        return JsonResponse({
+            "status": "ok",
+            "message": f"Đã tạo nhân viên {user_id}",
+            "user_id": user_id,
+        })
+
+    # Có images → thay toàn bộ embedding (batch mode cũ)
+    Embedding.objects.filter(user=user).delete()
     vectors = []
     for img in images:
         emb = fr.embedding_from_image_bytes(img.read())
@@ -141,15 +173,47 @@ def api_register_employee(request):
             vectors.append(emb.tolist())
 
     if not vectors:
-        return JsonResponse({"status": "fail", "message": "Không lấy được embedding"})
+        return JsonResponse({"status": "fail", "message": "Không lấy được embedding từ ảnh đã cung cấp"})
 
     for vec in vectors:
         Embedding.objects.create(user=user, vector=json.dumps(vec))
 
     return JsonResponse({
         "status": "ok",
-        "message": f"Đã thêm {len(vectors)} ảnh cho {user_id}"
+        "saved_vectors": len(vectors),
+        "message": f"Đã đăng ký {user_id} với {len(vectors)} embedding",
+        "user_id": user_id,
     })
+
+
+@csrf_exempt
+def api_register_frame(request):
+    """Thu một frame, trích embedding, so sánh đa dạng, lưu nếu đủ khác biệt."""
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required")
+    user_id = request.POST.get("user_id")
+    if not user_id:
+        return JsonResponse({"status": "fail", "message": "user_id required"})
+    if "image" not in request.FILES:
+        return JsonResponse({"status": "no_face"})
+    img = request.FILES["image"].read()
+    return JsonResponse(fr.check_and_register_frame(img, user_id))
+
+
+@csrf_exempt
+def api_clear_embeddings(request):
+    """Xóa toàn bộ embedding của một nhân viên."""
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required")
+    user_id = request.POST.get("user_id")
+    if not user_id:
+        return JsonResponse({"status": "fail", "message": "user_id required"})
+    try:
+        user = Employee.objects.get(user_id=user_id)
+    except Employee.DoesNotExist:
+        return JsonResponse({"status": "fail", "message": "User not found"})
+    deleted, _ = Embedding.objects.filter(user=user).delete()
+    return JsonResponse({"status": "ok", "deleted": deleted})
 
 
 @csrf_exempt
@@ -166,7 +230,7 @@ def api_checkin(request):
     except Employee.DoesNotExist:
         return JsonResponse({"status": "fail", "message": "User not found"})
 
-    now = datetime.now()
+    now = timezone.localtime()
     today = now.date()
 
     record, created = Attendance.objects.get_or_create(
@@ -181,7 +245,10 @@ def api_checkin(request):
             "message": f"{user.user_id} đã check-in lúc {record.checkin.strftime('%H:%M:%S')}"
         })
 
-    status_in = "Đúng giờ" if now.hour < 8 or (now.hour == 8 and now.minute <= 30) else "Muộn"
+    schedule = WorkSchedule.get()
+    cutoff = schedule.start_time
+    current = now.time().replace(second=0, microsecond=0)
+    status_in = "Đúng giờ" if current <= cutoff else "Muộn"
 
     record.checkin = now.time()
     record.status_in = status_in
@@ -208,7 +275,7 @@ def api_checkout(request):
     except Employee.DoesNotExist:
         return JsonResponse({"status": "fail", "message": "User not found"})
 
-    now = datetime.now()
+    now = timezone.localtime()
     today = now.date()
 
     record, created = Attendance.objects.get_or_create(
@@ -216,7 +283,9 @@ def api_checkout(request):
         date=today
     )
 
-    status_out = "Sớm" if now.hour < 18 else "Bình thường"
+    schedule = WorkSchedule.get()
+    current = now.time().replace(second=0, microsecond=0)
+    status_out = "Sớm" if current < schedule.end_time else "Bình thường"
 
     record.checkout = now.time()
     record.status_out = status_out
@@ -227,6 +296,127 @@ def api_checkout(request):
         "time": now.strftime("%H:%M:%S"),
         "status_out": status_out
     })
+
+@csrf_exempt
+def api_employee_self_attendance(request):
+    """
+    Nhân viên tự chấm công: gửi ảnh → nhận diện → xác minh khớp session → ghi nhận.
+    Trả lỗi nếu không nhận diện được hoặc khuôn mặt không khớp tài khoản.
+    """
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required")
+
+    from .auth_views import get_current_user
+    user = get_current_user(request)
+    if not user or not user.employee:
+        return JsonResponse({"status": "fail", "message": "Chưa đăng nhập hoặc không phải nhân viên"})
+
+    employee = user.employee
+
+    if "image" not in request.FILES:
+        return JsonResponse({"status": "fail", "message": "Thiếu ảnh"})
+
+    img_bytes = request.FILES["image"].read()
+    res = fr.recognize_from_image_bytes_with_box(img_bytes)
+
+    if res.get("status") == "no_face":
+        return JsonResponse({"status": "fail", "message": "Không phát hiện khuôn mặt"})
+
+    recognized_id = res.get("name", "Unknown")
+    if recognized_id in ("Unknown", "Spoof", None, ""):
+        return JsonResponse({"status": "fail", "message": "Không nhận diện được khuôn mặt"})
+
+    if recognized_id != employee.user_id:
+        return JsonResponse({"status": "fail", "message": "Khuôn mặt không khớp tài khoản này"})
+
+    now = timezone.localtime()
+    today = now.date()
+    schedule = WorkSchedule.get()
+    current = now.time().replace(second=0, microsecond=0)
+
+    record, _ = Attendance.objects.get_or_create(user=employee, date=today)
+
+    if not record.checkin:
+        status_in = "Đúng giờ" if current <= schedule.start_time else "Muộn"
+        record.checkin = now.time()
+        record.status_in = status_in
+        record.save()
+        return JsonResponse({
+            "status": "ok",
+            "type": "checkin",
+            "time": now.strftime("%H:%M:%S"),
+            "user_id": employee.user_id,
+            "name": employee.name,
+            "status_in": status_in,
+        })
+    else:
+        status_out = "Sớm" if current < schedule.end_time else "Bình thường"
+        record.checkout = now.time()
+        record.status_out = status_out
+        record.save()
+        return JsonResponse({
+            "status": "ok",
+            "type": "checkout",
+            "time": now.strftime("%H:%M:%S"),
+            "user_id": employee.user_id,
+            "name": employee.name,
+            "status_out": status_out,
+        })
+
+
+@csrf_exempt
+def api_auto_attendance(request):
+    """
+    Tự động chấm công:
+    - Chưa check-in hôm nay → ghi check-in
+    - Đã check-in rồi → cập nhật check-out (liên tục, lần cuối = checkout cuối cùng)
+    """
+    if request.method != "POST":
+        return HttpResponseBadRequest("POST required")
+
+    user_id = request.POST.get("user_id")
+    if not user_id:
+        return JsonResponse({"status": "fail", "message": "user_id required"})
+
+    try:
+        user = Employee.objects.get(user_id=user_id)
+    except Employee.DoesNotExist:
+        return JsonResponse({"status": "fail", "message": "User not found"})
+
+    now = timezone.localtime()
+    today = now.date()
+    schedule = WorkSchedule.get()
+    current = now.time().replace(second=0, microsecond=0)
+
+    record, _ = Attendance.objects.get_or_create(user=user, date=today)
+
+    if not record.checkin:
+        status_in = "Đúng giờ" if current <= schedule.start_time else "Muộn"
+        record.checkin = now.time()
+        record.status_in = status_in
+        record.save()
+        return JsonResponse({
+            "status": "ok",
+            "type": "checkin",
+            "time": now.strftime("%H:%M:%S"),
+            "user_id": user.user_id,
+            "name": user.name,
+            "status_in": status_in,
+        })
+    else:
+        status_out = "Sớm" if current < schedule.end_time else "Bình thường"
+        record.checkout = now.time()
+        record.status_out = status_out
+        record.save()
+        return JsonResponse({
+            "status": "ok",
+            "type": "checkout",
+            "time": now.strftime("%H:%M:%S"),
+            "user_id": user.user_id,
+            "name": user.name,
+            "status_out": status_out,
+        })
+
 
 @csrf_exempt
 def api_checkin_status(request):
@@ -246,7 +436,7 @@ def api_checkin_status(request):
     except Employee.DoesNotExist:
         return JsonResponse({"status": "fail", "message": "user not found"})
 
-    today = datetime.now().date()
+    today = timezone.localdate()
     try:
         record = Attendance.objects.get(user=user, date=today)
     except Attendance.DoesNotExist:
@@ -260,7 +450,7 @@ def api_checkin_status(request):
 
 @csrf_exempt
 def api_list_users(request):
-    users = Employee.objects.all().values("user_id", "name", "position")
+    users = Employee.objects.all().values("user_id", "name", "position", "department")
     return JsonResponse({"status": "ok", "users": list(users)})
 
 @csrf_exempt
@@ -278,6 +468,7 @@ def api_update_user(request):
     user_id = request.POST.get('user_id')
     name = request.POST.get('name')
     position = request.POST.get('position')
+    department = request.POST.get('department', '').strip()
 
     if not user_id or not name or not position:
         return JsonResponse({"status": "fail", "message": "user_id, name and position required"})
@@ -289,6 +480,7 @@ def api_update_user(request):
 
     user.name = name
     user.position = position
+    user.department = department
     user.save()
 
     return JsonResponse({"status": "ok", "message": "Cập nhật thành công", "user_id": user_id})
@@ -349,7 +541,12 @@ def api_replace_face(request):
     for vec in new_vectors:
         Embedding.objects.create(user=user, vector=json.dumps(vec))
 
-    return JsonResponse({"status": "ok", "message": "Cập nhật ảnh thành công", "user_id": user_id})
+    return JsonResponse({
+        "status": "ok",
+        "saved_vectors": len(new_vectors),
+        "message": f"Cập nhật ảnh thành công, đã lưu {len(new_vectors)} embedding",
+        "user_id": user_id
+    })
 
 
 
@@ -384,6 +581,7 @@ def api_history_by_day(request):
     data = [
         {
             "user_id": r.user.user_id,
+            "name": r.user.name,
             "checkin": r.checkin.strftime("%H:%M:%S") if r.checkin else None,
             "status_in": r.status_in,
             "checkout": r.checkout.strftime("%H:%M:%S") if r.checkout else None,
@@ -393,6 +591,69 @@ def api_history_by_day(request):
     ]
 
     return JsonResponse({"status": "ok", "data": data})
+
+
+@csrf_exempt
+def api_history_by_month(request):
+    month = request.GET.get("month")
+    year = request.GET.get("year")
+    if not month or not year:
+        return JsonResponse({"status": "fail", "message": "month and year required"})
+
+    try:
+        month = int(month)
+        year = int(year)
+    except ValueError:
+        return JsonResponse({"status": "fail", "message": "invalid month or year"})
+
+    records = Attendance.objects.filter(
+        date__month=month, date__year=year
+    ).select_related("user").order_by("date", "user__user_id")
+
+    data = [
+        {
+            "date": r.date.strftime("%Y-%m-%d"),
+            "user_id": r.user.user_id,
+            "name": r.user.name,
+            "checkin": r.checkin.strftime("%H:%M:%S") if r.checkin else None,
+            "status_in": r.status_in,
+            "checkout": r.checkout.strftime("%H:%M:%S") if r.checkout else None,
+            "status_out": r.status_out,
+        }
+        for r in records
+    ]
+    return JsonResponse({"status": "ok", "data": data})
+
+
+@csrf_exempt
+def api_history_by_year(request):
+    year = request.GET.get("year")
+    if not year:
+        return JsonResponse({"status": "fail", "message": "year required"})
+
+    try:
+        year = int(year)
+    except ValueError:
+        return JsonResponse({"status": "fail", "message": "invalid year"})
+
+    records = Attendance.objects.filter(
+        date__year=year
+    ).select_related("user").order_by("date", "user__user_id")
+
+    data = [
+        {
+            "date": r.date.strftime("%Y-%m-%d"),
+            "user_id": r.user.user_id,
+            "name": r.user.name,
+            "checkin": r.checkin.strftime("%H:%M:%S") if r.checkin else None,
+            "status_in": r.status_in,
+            "checkout": r.checkout.strftime("%H:%M:%S") if r.checkout else None,
+            "status_out": r.status_out,
+        }
+        for r in records
+    ]
+    return JsonResponse({"status": "ok", "data": data})
+
 
 @csrf_exempt
 def api_check_user(request, user_id):
@@ -408,7 +669,22 @@ def api_history_by_id(request, user_id):
     except Employee.DoesNotExist:
         return JsonResponse({"status": "fail", "message": "user not found"})
 
-    records = Attendance.objects.filter(user=user).order_by("-date")
+    records = Attendance.objects.filter(user=user)
+
+    year_param = request.GET.get("year")
+    month_param = request.GET.get("month")
+    if year_param:
+        try:
+            records = records.filter(date__year=int(year_param))
+        except ValueError:
+            pass
+    if month_param:
+        try:
+            records = records.filter(date__month=int(month_param))
+        except ValueError:
+            pass
+
+    records = records.order_by("-date")
 
     result = [
         {
@@ -430,4 +706,18 @@ def api_history_by_id(request, user_id):
     })
 
 
+@csrf_exempt
+def api_camera_release(request):
+    """Giải phóng camera server-side nếu không có WebSocket client nào đang kết nối."""
+    if _consumers._display_client_count > 0:
+        return JsonResponse({"released": False, "message": "Camera đang được admin sử dụng"})
 
+    reader = _consumers._local_reader
+    task   = _consumers._local_reader_task
+    if reader is not None:
+        reader.stop()
+    if task is not None and not task.done():
+        task.cancel()
+    _consumers._local_reader      = None
+    _consumers._local_reader_task = None
+    return JsonResponse({"released": True})

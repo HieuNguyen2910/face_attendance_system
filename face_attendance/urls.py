@@ -17,11 +17,20 @@ Including another URLconf
 
 from django.contrib import admin
 from django.urls import path, include
+from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+from django.views.generic import RedirectView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('django-admin/', admin.site.urls),  # Django built-in admin (đổi để tránh xung đột)
 
     path('', include('attendance.urls')),
-    
+
     path('attendance/api/', include('attendance.urls_api')),
+
+    # Redirect /sw.js to the actual static file so browser stops getting 404
+    path('sw.js', RedirectView.as_view(
+        url='/static/attendance/js/sw.js', permanent=False
+    )),
 ]
+
+urlpatterns += staticfiles_urlpatterns()

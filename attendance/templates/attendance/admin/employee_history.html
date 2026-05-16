@@ -1,0 +1,169 @@
+{% extends "attendance/admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}Lịch sử — {{ employee.name }}{% endblock %}
+{% block page_title %}Lịch sử chấm công cá nhân{% endblock %}
+
+{% block content %}
+<style>
+.hist-input {
+    height: 36px;
+    padding: 0 11px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color .18s;
+    box-sizing: border-box;
+}
+.hist-input:focus { border-color: var(--primary); }
+</style>
+
+<!-- Breadcrumb -->
+<div style="display:flex; align-items:center; gap:8px; margin-bottom:20px; font-size:13px; color:var(--text-muted);">
+    <a href="{% url 'admin_manage' %}" style="color:var(--primary); font-weight:500;">Quản lí Nhân viên</a>
+    <span>›</span>
+    <span style="color:var(--text-secondary);">{{ employee.name }}</span>
+</div>
+
+<!-- Employee info card -->
+<div class="section" style="margin-bottom:22px;">
+    <div class="section-header">
+        <h3 class="section-title">Thông tin nhân viên</h3>
+        <a href="{% url 'admin_manage' %}" class="btn btn-outline" style="padding:6px 14px; font-size:12.5px;">← Quay lại</a>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:0;">
+        <div style="padding:12px 0; border-bottom:1px solid var(--border-light); display:flex; gap:12px; align-items:center;">
+            <span style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); width:90px; flex-shrink:0;">Mã NV</span>
+            <span class="employee-id">{{ employee.user_id }}</span>
+        </div>
+        <div style="padding:12px 0; border-bottom:1px solid var(--border-light); display:flex; gap:12px; align-items:center;">
+            <span style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); width:90px; flex-shrink:0;">Họ tên</span>
+            <span style="font-weight:600; color:var(--text-primary);">{{ employee.name }}</span>
+        </div>
+        <div style="padding:12px 0; border-bottom:1px solid var(--border-light); display:flex; gap:12px; align-items:center;">
+            <span style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); width:90px; flex-shrink:0;">Vị trí</span>
+            <span style="color:var(--text-primary);">{{ employee.position }}</span>
+        </div>
+        <div style="padding:12px 0; border-bottom:1px solid var(--border-light); display:flex; gap:12px; align-items:center;">
+            <span style="font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted); width:90px; flex-shrink:0;">Phòng ban</span>
+            <span style="color:var(--text-primary);">{{ employee.department|default:"—" }}</span>
+        </div>
+    </div>
+</div>
+
+<!-- Attendance history -->
+<div class="section">
+    <div class="section-header" style="flex-wrap:wrap; gap:10px;">
+        <h3 class="section-title">Lịch sử chấm công</h3>
+
+        <!-- Filter controls -->
+        <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+            <label style="font-size:12.5px; color:var(--text-muted); white-space:nowrap;">Tháng</label>
+            <select id="filterMonthSel" class="hist-input" style="width:120px;">
+                <option value="">Tất cả</option>
+                <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
+                <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
+                <option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+                <option value="7">Tháng 7</option><option value="8">Tháng 8</option>
+                <option value="9">Tháng 9</option><option value="10">Tháng 10</option>
+                <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+            </select>
+            <input type="number" id="filterYearInp" class="hist-input" placeholder="Năm"
+                   min="2020" max="2099" style="width:84px;">
+            <button id="btnApplyFilter" class="btn btn-primary"
+                    style="height:36px; padding:0 16px; font-size:13px;">Lọc</button>
+            <button id="btnFilterAll" class="btn btn-outline"
+                    style="height:36px; padding:0 14px; font-size:13px;">Tất cả</button>
+            <span id="recordCount" style="font-size:12px; color:var(--text-muted);">{{ history|length }} bản ghi</span>
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="history-table">
+            <thead>
+                <tr>
+                    <th>Ngày</th>
+                    <th>Check-in</th>
+                    <th>Trạng thái Check-in</th>
+                    <th>Check-out</th>
+                    <th>Trạng thái Check-out</th>
+                </tr>
+            </thead>
+            <tbody id="empHistTBody">
+                {% for record in history %}
+                <tr data-year="{{ record.date|date:'Y' }}" data-month="{{ record.date|date:'n' }}">
+                    <td>{{ record.date|date:"d-m-Y" }}</td>
+                    <td class="time-cell">{{ record.checkin|time:"H:i:s"|default:"—" }}</td>
+                    <td>
+                        <span class="status {% if record.status_in == 'Đúng giờ' %}on-time{% elif record.status_in == 'Muộn' %}late{% endif %}">
+                            {{ record.status_in|default:"—" }}
+                        </span>
+                    </td>
+                    <td class="time-cell">{{ record.checkout|time:"H:i:s"|default:"—" }}</td>
+                    <td><span class="status">{{ record.status_out|default:"—" }}</span></td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="empty">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📋</div>
+                        <div class="empty-state-text">Chưa có dữ liệu chấm công</div>
+                    </div>
+                </td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+(function () {
+    const tbody    = document.getElementById('empHistTBody');
+    const monthSel = document.getElementById('filterMonthSel');
+    const yearInp  = document.getElementById('filterYearInp');
+    const countEl  = document.getElementById('recordCount');
+    const allRows  = Array.from(tbody.querySelectorAll('tr[data-year]'));
+
+    function applyFilter(month, year) {
+        let visible = 0;
+        allRows.forEach(tr => {
+            const ok = (!year  || tr.dataset.year  === String(year))
+                    && (!month || tr.dataset.month === String(month));
+            tr.style.display = ok ? '' : 'none';
+            if (ok) visible++;
+        });
+        let noDataRow = tbody.querySelector('#noDataRow');
+        if (visible === 0 && allRows.length > 0) {
+            if (!noDataRow) {
+                noDataRow = document.createElement('tr');
+                noDataRow.id = 'noDataRow';
+                noDataRow.innerHTML = '<td colspan="5" class="empty">Không có dữ liệu trong khoảng thời gian này</td>';
+                tbody.appendChild(noDataRow);
+            }
+        } else if (noDataRow) {
+            noDataRow.remove();
+        }
+        countEl.textContent = visible + ' bản ghi';
+    }
+
+    // Pre-fill current month/year and auto-apply on load
+    const now = new Date();
+    monthSel.value = now.getMonth() + 1;
+    yearInp.value  = now.getFullYear();
+    applyFilter(monthSel.value, yearInp.value);
+
+    document.getElementById('btnApplyFilter').addEventListener('click', () => {
+        applyFilter(monthSel.value, yearInp.value);
+    });
+
+    document.getElementById('btnFilterAll').addEventListener('click', () => {
+        monthSel.value = '';
+        yearInp.value  = '';
+        applyFilter('', '');
+    });
+})();
+</script>
+
+{% endblock %}

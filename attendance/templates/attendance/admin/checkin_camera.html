@@ -1,0 +1,403 @@
+{% extends "attendance/admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}Chấm Công{% endblock %}
+{% block page_title %}Chấm Công{% endblock %}
+
+{% block extra_css %}
+<style>
+
+/* ── Layout: camera trái, panel phải ── */
+.checkin-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 18px;
+    align-items: start;
+}
+
+/* ── Camera Card ── */
+.camera-card {
+    background: #0f172a;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid #1e293b;
+}
+.camera-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 16px;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.camera-live-badge {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 11.5px; font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase; letter-spacing: 0.06em;
+}
+.camera-live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 0 2px rgba(74,222,128,0.25);
+    animation: camPulse 2s ease-in-out infinite;
+}
+@keyframes camPulse {
+    0%,100% { box-shadow: 0 0 0 2px rgba(74,222,128,0.25); }
+    50%      { box-shadow: 0 0 0 5px rgba(74,222,128,0.06); }
+}
+.camera-header-right {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; color: rgba(255,255,255,0.35);
+}
+.camera-header-right .material-symbols-outlined {
+    font-size: 14px;
+    font-variation-settings: 'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20;
+}
+.camera-feed {
+    position: relative;
+    width: 100%; aspect-ratio: 16/10;
+    background: #020617;
+}
+.camera-feed #videoCanvas {
+    width: 100%; height: 100%;
+    transform: scaleX(-1); display: block;
+}
+.camera-feed #overlay {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none; transform: scaleX(-1);
+}
+
+/* ── Side Panel ── */
+.side-panel {
+    display: flex; flex-direction: column; gap: 14px;
+}
+
+/* ── Clock Card ── */
+.clock-card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    text-align: center;
+}
+.clock-time {
+    font-size: 34px; font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: 2px; font-variant-numeric: tabular-nums; line-height: 1;
+    margin-bottom: 4px;
+}
+.clock-date { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+
+/* ── Auto Mode Card ── */
+.auto-card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+.auto-card.is-on { border-color: var(--success); }
+.auto-card-inner {
+    padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.auto-card-left { display: flex; align-items: center; gap: 10px; }
+.auto-card-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    background: var(--primary-muted);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.auto-card-icon .material-symbols-outlined {
+    font-size: 18px; color: var(--primary);
+    font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20;
+}
+.auto-card-label { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.auto-badge {
+    display: inline-block; font-size: 10.5px; font-weight: 600;
+    padding: 1px 8px; border-radius: 100px; margin-top: 2px;
+}
+.auto-badge.on  { background: var(--success-light); color: var(--success-text); }
+.auto-badge.off { background: var(--border-light);  color: var(--text-muted); }
+.auto-switch {
+    position: relative; width: 44px; height: 24px;
+    border-radius: 12px; border: none; cursor: pointer;
+    padding: 0; background: #cbd5e1; flex-shrink: 0;
+    transition: background 0.2s; outline: none;
+}
+.auto-switch.on { background: var(--success); }
+.auto-switch::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; background: #fff; border-radius: 50%;
+    transition: transform 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+}
+.auto-switch.on::after { transform: translateX(20px); }
+
+/* ── Log Card (cột phải) ── */
+.log-card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+    flex: 1;
+}
+.log-card-head {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex; align-items: center; justify-content: space-between;
+}
+.log-card-title {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12.5px; font-weight: 700; color: var(--text-primary);
+}
+.log-card-title .material-symbols-outlined {
+    font-size: 16px; color: var(--primary);
+    font-variation-settings: 'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20;
+}
+.log-count-badge {
+    font-size: 10.5px; font-weight: 700;
+    background: var(--primary-muted); color: var(--primary);
+    padding: 2px 9px; border-radius: 100px;
+}
+.log-card-body { overflow-y: auto; max-height: 320px; }
+
+/* Log table compact */
+.log-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+.log-table thead { background: var(--border-light); position: sticky; top: 0; z-index: 1; }
+.log-table th {
+    padding: 8px 12px; text-align: left; font-weight: 600;
+    color: var(--text-secondary); font-size: 10.5px;
+    text-transform: uppercase; letter-spacing: 0.4px;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.log-table td {
+    padding: 9px 12px; border-bottom: 1px solid var(--border-light);
+    color: var(--text-primary); font-size: 12.5px;
+}
+.log-table tbody tr:last-child td { border-bottom: none; }
+.log-table tbody tr:hover { background: var(--bg); }
+
+/* Flash animation */
+@keyframes logFlash {
+    0%   { background: rgba(37,99,235,0.1); }
+    100% { background: transparent; }
+}
+.log-flash { animation: logFlash 2.5s ease-out forwards; }
+
+/* ── Dark mode ── */
+html.dark .camera-card { border-color: #1e293b; }
+html.dark .auto-switch { background: #334155; }
+html.dark .log-card, html.dark .auto-card, html.dark .clock-card { background: #1e293b; }
+html.dark .log-table thead { background: #0f172a; }
+html.dark .log-table td { border-bottom-color: #283548; }
+html.dark .log-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .checkin-layout { grid-template-columns: 1fr; }
+    .log-card-body { max-height: 260px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<div class="checkin-layout">
+
+    <!-- ── Camera ── -->
+    <div class="camera-card">
+        <div class="camera-card-header">
+            <div class="camera-live-badge">
+                <span class="camera-live-dot"></span>
+                Camera đang hoạt động
+            </div>
+        </div>
+        <div class="camera-feed">
+            <canvas id="videoCanvas"></canvas>
+            <canvas id="overlay"></canvas>
+        </div>
+    </div>
+
+    <!-- ── Side Panel ── -->
+    <div class="side-panel">
+
+        <!-- Clock -->
+        <div class="clock-card">
+            <div id="realtimeClock" class="clock-time">--:--:--</div>
+            <div class="clock-date" id="clockDate">--</div>
+        </div>
+
+        <!-- Auto Mode -->
+        <div class="auto-card" id="autoModeCard">
+            <div class="auto-card-inner">
+                <div class="auto-card-left">
+                    <div class="auto-card-icon">
+                        <span class="material-symbols-outlined">hdr_auto</span>
+                    </div>
+                    <div>
+                        <div class="auto-card-label">Tự động chấm công</div>
+                        <span id="autoModeBadge" class="auto-badge off">Tắt</span>
+                    </div>
+                </div>
+                <button id="autoToggleBtn" type="button" class="auto-switch" title="Bật/tắt"></button>
+            </div>
+        </div>
+
+        <!-- Live Log -->
+        <div class="log-card">
+            <div class="log-card-head">
+                <div class="log-card-title">
+                    <span class="material-symbols-outlined">fact_check</span>
+                    Nhật ký hôm nay
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <span class="log-count-badge" id="logCountBadge">0</span>
+                    <button type="button" id="clearLogBtn" class="btn btn-outline"
+                            style="padding:4px 10px;font-size:11.5px;">Xóa</button>
+                </div>
+            </div>
+            <div class="log-card-body">
+                <table class="log-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Giờ</th>
+                        </tr>
+                    </thead>
+                    <tbody id="liveLogBody">
+                        <tr class="empty-log-row">
+                            <td colspan="2" style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px;">
+                                Chưa có bản ghi
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- hidden elements required by camera.js -->
+<div id="detectHint" style="display:none;"></div>
+<div id="statusBox"  style="display:none;"></div>
+<span id="dot1"      style="display:none;"></span>
+<span id="dot2"      style="display:none;"></span>
+<span id="dot3"      style="display:none;"></span>
+
+<script>
+window.recognizeUrl       = "{% url 'api_recognize' %}";
+window.autoAttendanceUrl  = "{% url 'api_auto_attendance' %}";
+window.checkinUrl         = "{% url 'api_checkin' %}";
+window.checkinStatusUrl   = "{% url 'api_checkin_status' %}";
+window.checkoutUrl        = "{% url 'api_checkout' %}";
+
+/* Date */
+(function () {
+    var VI_DAYS = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
+    var now = new Date();
+    document.getElementById('clockDate').textContent =
+        VI_DAYS[now.getDay()] + ', ' + now.getDate() + '/' + (now.getMonth()+1) + '/' + now.getFullYear();
+})();
+
+/* Badge count + remap addLogEntry columns */
+(function () {
+    var badge = document.getElementById('logCountBadge');
+    var body  = document.getElementById('liveLogBody');
+    var count = 0;
+
+    var observer = new MutationObserver(function () {
+        count = body.querySelectorAll('tr:not(.empty-log-row)').length;
+        badge.textContent = count;
+    });
+    observer.observe(body, { childList: true });
+
+    /* Override addLogEntry to use compact 4-column format */
+    document.addEventListener('_overrideReady', function () {}, { once: true });
+})();
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'attendance/js/camera.js' %}?v=8"></script>
+<script>
+(function () {
+    var body      = document.getElementById('liveLogBody');
+    var clearBtn  = document.getElementById('clearLogBtn');
+    if (!body) return;
+
+    var STORAGE_KEY = 'checkin_log_' + new Date().toISOString().slice(0, 10);
+
+    /* ── Restore log from localStorage on page load ── */
+    function loadLog() {
+        var saved = [];
+        try { saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch (e) {}
+        if (!saved.length) return;
+        var emptyRow = body.querySelector('.empty-log-row');
+        if (emptyRow) emptyRow.remove();
+        saved.forEach(function (entry) {
+            var tr = document.createElement('tr');
+            tr.dataset.userid = entry.id;
+            tr.innerHTML =
+                '<td style="font-weight:500;">' + entry.id + '</td>' +
+                '<td style="font-variant-numeric:tabular-nums;">' + entry.time + '</td>';
+            body.appendChild(tr);
+        });
+    }
+
+    function saveLog() {
+        var rows = body.querySelectorAll('tr:not(.empty-log-row)');
+        var entries = [];
+        rows.forEach(function (row) {
+            var cells = row.querySelectorAll('td');
+            if (cells.length >= 2) {
+                entries.push({ id: cells[0].textContent.trim(), time: cells[1].textContent.trim() });
+            }
+        });
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); } catch (e) {}
+    }
+
+    loadLog();
+
+    /* ── Patch new rows added by camera.js ── */
+    var ob = new MutationObserver(function (muts) {
+        var hasNew = false;
+        muts.forEach(function (m) {
+            m.addedNodes.forEach(function (node) {
+                if (node.nodeType !== 1 || node.classList.contains('empty-log-row')) return;
+                var cells = node.querySelectorAll('td');
+                if (cells.length < 5) return;
+                /* camera.js columns: [#, user_id, name, type, time, status] */
+                var id   = cells[1] ? cells[1].textContent.trim() : '';
+                var time = cells[4] ? cells[4].textContent.trim() : '';
+                node.dataset.userid = id;
+                node.innerHTML =
+                    '<td style="font-weight:500;">' + id + '</td>' +
+                    '<td style="font-variant-numeric:tabular-nums;">' + time + '</td>';
+                hasNew = true;
+            });
+        });
+        /* renumberLog() in camera.js runs before this observer fires and
+           overwrites td:first-child with a sequence number. Restore user IDs. */
+        body.querySelectorAll('tr:not(.empty-log-row)').forEach(function (row) {
+            var saved = row.dataset.userid;
+            if (!saved) return;
+            var first = row.querySelector('td:first-child');
+            if (first && first.textContent !== saved) first.textContent = saved;
+        });
+        if (hasNew) saveLog();
+    });
+    ob.observe(body, { childList: true });
+
+    /* ── Clear also wipes localStorage ── */
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function () {
+            try { localStorage.removeItem(STORAGE_KEY); } catch (e) {}
+        });
+    }
+})();
+</script>
+{% endblock %}

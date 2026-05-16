@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,21 +26,37 @@ SECRET_KEY = 'django-insecure-(jk$)845&nktja%l19*h3%_8%ia&3peun*@z3h@q=jc-4(wjii
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+# ALLOWED_HOSTS = []
 
+ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = [
+    "https://hieunguyen-system-product-name.taild7ed9d.ts.net",
+    "https://192.168.0.102:8000",
+]
 
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'channels',
     'attendance',
     'django_extensions',
+    'sslserver',
 ]
+
+ASGI_APPLICATION = 'face_attendance.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    }
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -78,14 +95,15 @@ WSGI_APPLICATION = 'face_attendance.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'mssql',
-        'NAME': 'AttendanceDB',        # tên database
-        'USER': '',                  # username
-        'PASSWORD': '',    # password
-        'HOST': '',           # hoặc IP server
-        'PORT': '',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.getenv('POSTGRES_DB', 'face_attendance'),
+        'USER': os.getenv('POSTGRES_USER', 'hieunguyen'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', 'abc123'),
+        'HOST': os.getenv('POSTGRES_HOST', 'localhost'),
+        'PORT': os.getenv('POSTGRES_PORT', '5432'),
+        'CONN_MAX_AGE': int(os.getenv('POSTGRES_CONN_MAX_AGE', '60')),
         'OPTIONS': {
-            'driver': 'ODBC Driver 17 for SQL Server',
+            'sslmode': os.getenv('POSTGRES_SSLMODE', 'prefer'),
         },
     }
 }
@@ -115,11 +133,13 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Bangkok'
 
 USE_I18N = True
 
 USE_TZ = True
+
+DATA_UPLOAD_MAX_NUMBER_FILES = int(os.getenv('DATA_UPLOAD_MAX_NUMBER_FILES', '400'))
 
 
 # Static files (CSS, JavaScript, Images)
@@ -134,4 +154,3 @@ STATICFILES_DIRS = [
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-

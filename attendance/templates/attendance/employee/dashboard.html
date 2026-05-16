@@ -1,0 +1,452 @@
+{% extends "attendance/employee/base_employee.html" %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<meta http-equiv="refresh" content="60">
+<style>
+
+/* ── Greeting Header ── */
+.emp-header {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 55%, #0ea5e9 100%);
+    border-radius: var(--radius-lg);
+    padding: 22px 28px;
+    margin-bottom: 22px;
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    position: relative; overflow: hidden;
+    box-shadow: 0 8px 24px rgba(37,99,235,0.22);
+}
+.emp-header::before {
+    content: ''; position: absolute;
+    width: 240px; height: 240px; top: -80px; right: 80px;
+    background: rgba(255,255,255,0.06); border-radius: 50%; pointer-events: none;
+}
+.emp-header::after {
+    content: ''; position: absolute;
+    width: 140px; height: 140px; bottom: -60px; right: -20px;
+    background: rgba(255,255,255,0.04); border-radius: 50%; pointer-events: none;
+}
+.emp-header-left { position: relative; z-index: 1; }
+.emp-greeting-sub {
+    font-size: 12px; font-weight: 600;
+    color: rgba(255,255,255,0.65);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    margin-bottom: 4px;
+}
+.emp-greeting-name {
+    font-size: 22px; font-weight: 800;
+    color: #fff; letter-spacing: -0.3px; margin-bottom: 5px;
+}
+.emp-header-meta {
+    display: flex; align-items: center; gap: 14px;
+    font-size: 12.5px; color: rgba(255,255,255,0.65);
+}
+.emp-header-meta span { display: flex; align-items: center; gap: 5px; }
+.emp-header-meta .material-symbols-outlined {
+    font-size: 14px;
+    font-variation-settings: 'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20;
+}
+.emp-header-right {
+    position: relative; z-index: 1;
+    display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+}
+.emp-live-pill {
+    display: flex; align-items: center; gap: 7px;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: 100px; padding: 6px 14px;
+    font-size: 12px; font-weight: 600; color: #fff;
+}
+.emp-live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #4ade80; flex-shrink: 0;
+    animation: empPulse 2.2s ease-in-out infinite;
+    box-shadow: 0 0 0 2px rgba(74,222,128,0.3);
+}
+@keyframes empPulse {
+    0%,100% { box-shadow: 0 0 0 2px rgba(74,222,128,0.3); }
+    50%      { box-shadow: 0 0 0 5px rgba(74,222,128,0.08); }
+}
+.btn-emp-refresh {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.22);
+    border-radius: var(--radius-sm);
+    padding: 7px 14px; font-size: 13px; font-weight: 600;
+    color: #fff; cursor: pointer; text-decoration: none;
+    font-family: inherit; transition: background 0.16s;
+}
+.btn-emp-refresh:hover { background: rgba(255,255,255,0.22); }
+.btn-emp-refresh .material-symbols-outlined {
+    font-size: 16px;
+    font-variation-settings: 'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20;
+}
+
+/* ── Today Status Cards ── */
+.today-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 16px;
+}
+.today-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 18px 22px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    position: relative; overflow: hidden;
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+.today-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.today-card::after {
+    content: ''; position: absolute;
+    top: 0; left: 0; right: 0; height: 3px;
+    border-radius: var(--radius) var(--radius) 0 0;
+}
+.today-card.card-in::after  { background: linear-gradient(90deg, #059669, #34d399); }
+.today-card.card-out::after { background: linear-gradient(90deg, #0ea5e9, #38bdf8); }
+
+.today-card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 12px;
+}
+.today-card-label {
+    font-size: 11px; font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+.today-card-icon {
+    width: 36px; height: 36px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+}
+.today-card-icon .material-symbols-outlined {
+    font-size: 18px;
+    font-variation-settings: 'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 24;
+}
+.today-card.card-in  .today-card-icon { background: #dcfce7; color: #059669; }
+.today-card.card-out .today-card-icon { background: #e0f2fe; color: #0ea5e9; }
+
+.today-time {
+    font-size: 28px; font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.5px; line-height: 1;
+    margin-bottom: 8px;
+    font-variant-numeric: tabular-nums;
+}
+.today-time.no-data { font-size: 28px; color: var(--text-muted); }
+
+/* ── Monthly Stats ── */
+.monthly-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    margin-bottom: 22px;
+}
+.monthly-card {
+    background: #fff;
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; gap: 14px;
+    transition: transform var(--transition), box-shadow var(--transition);
+}
+.monthly-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+.monthly-icon {
+    width: 42px; height: 42px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.monthly-icon .material-symbols-outlined {
+    font-size: 20px;
+    font-variation-settings: 'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 24;
+}
+.monthly-card.card-ontime .monthly-icon { background: #dcfce7; color: #059669; }
+.monthly-card.card-late   .monthly-icon { background: #fef3c7; color: #d97706; }
+.monthly-number {
+    font-size: 26px; font-weight: 800;
+    color: var(--text-primary);
+    letter-spacing: -0.5px; line-height: 1; margin-bottom: 2px;
+}
+.monthly-label {
+    font-size: 11px; font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.5px;
+}
+
+/* ── Bottom grid ── */
+.emp-bottom {
+    margin-bottom: 20px;
+}
+
+/* ── Info Card ── */
+.info-card {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+.info-card-head {
+    padding: 15px 20px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex; align-items: center; gap: 9px;
+}
+.info-card-head .material-symbols-outlined {
+    font-size: 18px; color: var(--primary);
+    font-variation-settings: 'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20;
+}
+.info-card-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.info-card-body {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.info-row {
+    display: flex; flex-direction: column;
+    padding: 14px 20px;
+    border-right: 1px solid var(--border-light);
+}
+.info-row:last-child { border-right: none; }
+.info-row-icon {
+    width: 28px; height: 28px; border-radius: 7px;
+    background: var(--primary-light);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-bottom: 10px;
+}
+.info-row-icon .material-symbols-outlined {
+    font-size: 14px; color: var(--primary);
+    font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20;
+}
+.info-row-key {
+    font-size: 10.5px; font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.4px;
+    margin-bottom: 3px;
+}
+.info-row-val {
+    font-size: 13px; font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* ── Action List ── */
+.action-list {
+    background: #fff;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    overflow: hidden;
+}
+.action-list-item {
+    display: flex; align-items: center; gap: 14px;
+    padding: 15px 20px;
+    text-decoration: none;
+    border-bottom: 1px solid var(--border-light);
+    transition: background var(--transition);
+    cursor: pointer;
+}
+.action-list-item:last-child { border-bottom: none; }
+.action-list-item:hover { background: var(--bg); }
+.action-list-item:hover .ali-arrow { opacity: 1; transform: translateX(2px); }
+
+.ali-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.ali-icon .material-symbols-outlined {
+    font-size: 20px;
+    font-variation-settings: 'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;
+}
+.ali-icon.blue   { background: var(--primary-light); color: var(--primary); }
+.ali-icon.teal   { background: #e0f2fe; color: #0ea5e9; }
+.ali-icon.slate  { background: var(--border-light); color: var(--text-secondary); }
+
+.ali-text { flex: 1; }
+.ali-title { font-size: 13.5px; font-weight: 600; color: var(--text-primary); margin-bottom: 1px; }
+.ali-sub   { font-size: 11.5px; color: var(--text-muted); }
+
+.ali-arrow .material-symbols-outlined {
+    font-size: 16px; color: var(--text-muted); opacity: 0.4;
+    font-variation-settings: 'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20;
+    transition: opacity var(--transition), transform var(--transition);
+}
+
+/* ── Dark mode ── */
+html.dark .today-card,
+html.dark .monthly-card,
+html.dark .info-card,
+html.dark .actions-card { background: #1e293b; }
+
+html.dark .today-card.card-in  .today-card-icon { background: rgba(5,150,105,0.18); }
+html.dark .today-card.card-out .today-card-icon { background: rgba(14,165,233,0.18); }
+html.dark .monthly-card.card-ontime .monthly-icon { background: rgba(5,150,105,0.18); }
+html.dark .monthly-card.card-late   .monthly-icon { background: rgba(245,158,11,0.18); }
+html.dark .info-row-icon { background: rgba(5,150,105,0.12); }
+html.dark .action-list { background: #1e293b; border-color: #334155; }
+html.dark .action-list-item { border-bottom-color: #283548; }
+html.dark .action-list-item:hover { background: #283548; }
+html.dark .ali-icon.teal { background: rgba(14,165,233,0.15); }
+html.dark .ali-icon.slate { background: rgba(255,255,255,0.06); }
+html.dark .info-row-icon { background: rgba(37,99,235,0.12); }
+
+/* ── Responsive ── */
+@media (max-width: 960px) {
+    .emp-bottom { grid-template-columns: 1fr; }
+    .info-card-body { grid-template-columns: repeat(2, 1fr); }
+    .info-row:nth-child(2) { border-right: none; }
+    .info-row:nth-child(1),
+    .info-row:nth-child(2) { border-bottom: 1px solid var(--border-light); }
+}
+@media (max-width: 480px) {
+    .info-card-body { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+    .today-grid, .monthly-grid { grid-template-columns: 1fr; gap: 10px; }
+    .emp-header { padding: 16px 18px; flex-direction: column; align-items: flex-start; gap: 12px; }
+    .emp-header-right { width: 100%; }
+    .emp-bottom { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- Greeting Header -->
+<div class="emp-header">
+    <div class="emp-header-left">
+        <div class="emp-greeting-sub">Xin chào</div>
+        <div class="emp-greeting-name">{{ employee.name }}</div>
+        <div class="emp-header-meta">
+            <span>
+                <span class="material-symbols-outlined">badge</span>
+                {{ employee.position }}
+            </span>
+            {% if employee.department %}
+            <span>
+                <span class="material-symbols-outlined">corporate_fare</span>
+                {{ employee.department }}
+            </span>
+            {% endif %}
+            <span>
+                <span class="material-symbols-outlined">calendar_today</span>
+                <span id="empDateStr">Đang tải...</span>
+            </span>
+        </div>
+    </div>
+    <div class="emp-header-right">
+        <div class="emp-live-pill">
+            <span class="emp-live-dot"></span>
+            Làm mới sau <span id="empCountdown" style="font-variant-numeric:tabular-nums; min-width:20px; display:inline-block; text-align:right;">60</span>s
+        </div>
+        <a href="{% url 'employee_dashboard' %}" class="btn-emp-refresh">
+            <span class="material-symbols-outlined">refresh</span>
+            Làm mới
+        </a>
+    </div>
+</div>
+
+<!-- Today Status -->
+<div class="today-grid">
+    <div class="today-card card-in">
+        <div class="today-card-head">
+            <span class="today-card-label">Check-in hôm nay</span>
+            <div class="today-card-icon"><span class="material-symbols-outlined">login</span></div>
+        </div>
+        <div class="today-time {% if not today_record.checkin %}no-data{% endif %}">
+            {% if today_record.checkin %}{{ today_record.checkin|time:"H:i:s" }}{% else %}—{% endif %}
+        </div>
+        {% if today_record.status_in %}
+        <span class="status {% if today_record.status_in == 'Đúng giờ' %}on-time{% else %}late{% endif %}">
+            {{ today_record.status_in }}
+        </span>
+        {% else %}
+        <span class="status">Chưa check-in</span>
+        {% endif %}
+    </div>
+    <div class="today-card card-out">
+        <div class="today-card-head">
+            <span class="today-card-label">Check-out hôm nay</span>
+            <div class="today-card-icon"><span class="material-symbols-outlined">logout</span></div>
+        </div>
+        <div class="today-time {% if not today_record.checkout %}no-data{% endif %}">
+            {% if today_record.checkout %}{{ today_record.checkout|time:"H:i:s" }}{% else %}—{% endif %}
+        </div>
+        {% if today_record.status_out %}
+        <span class="status {% if today_record.status_out == 'Đúng giờ' %}on-time{% else %}late{% endif %}">
+            {{ today_record.status_out }}
+        </span>
+        {% else %}
+        <span class="status">Chưa check-out</span>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Monthly Stats -->
+<div class="monthly-grid">
+    <div class="monthly-card card-ontime">
+        <div class="monthly-icon"><span class="material-symbols-outlined">check_circle</span></div>
+        <div>
+            <div class="monthly-number">{{ on_time }}</div>
+            <div class="monthly-label">Đúng giờ tháng này</div>
+        </div>
+    </div>
+    <div class="monthly-card card-late">
+        <div class="monthly-icon"><span class="material-symbols-outlined">schedule</span></div>
+        <div>
+            <div class="monthly-number">{{ late }}</div>
+            <div class="monthly-label">Đi muộn tháng này</div>
+        </div>
+    </div>
+</div>
+
+<!-- Bottom: Info + Actions -->
+<div class="emp-bottom">
+
+    <!-- Employee Info -->
+    <div class="info-card">
+        <div class="info-card-head">
+            <span class="material-symbols-outlined">person</span>
+            <span class="info-card-title">Thông tin nhân viên</span>
+        </div>
+        <div class="info-card-body">
+            <div class="info-row">
+                <div class="info-row-icon"><span class="material-symbols-outlined">tag</span></div>
+                <span class="info-row-key">Mã NV</span>
+                <span class="info-row-val"><span class="employee-id">{{ employee.user_id }}</span></span>
+            </div>
+            <div class="info-row">
+                <div class="info-row-icon"><span class="material-symbols-outlined">person</span></div>
+                <span class="info-row-key">Họ tên</span>
+                <span class="info-row-val">{{ employee.name }}</span>
+            </div>
+            <div class="info-row">
+                <div class="info-row-icon"><span class="material-symbols-outlined">work</span></div>
+                <span class="info-row-key">Vị trí</span>
+                <span class="info-row-val">{{ employee.position }}</span>
+            </div>
+            <div class="info-row">
+                <div class="info-row-icon"><span class="material-symbols-outlined">corporate_fare</span></div>
+                <span class="info-row-key">Phòng ban</span>
+                <span class="info-row-val">{{ employee.department|default:"—" }}</span>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+
+<script>
+(function () {
+    var VI_DAYS = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
+    var now = new Date();
+    document.getElementById('empDateStr').textContent =
+        VI_DAYS[now.getDay()] + ', ' + now.getDate() + '/' + (now.getMonth()+1) + '/' + now.getFullYear();
+
+    var n = 60, el = document.getElementById('empCountdown');
+    setInterval(function () { n--; if (n < 0) n = 59; el.textContent = n; }, 1000);
+})();
+</script>
+
+{% endblock %}

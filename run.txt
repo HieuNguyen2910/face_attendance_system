@@ -1,1 +1,10 @@
-python manage.py runserver
+daphne -b 0.0.0.0 -p 18789 face_attendance.asgi:application
+
+
+https://hieunguyen-system-product-name.taild7ed9d.ts.net
+
+
+openssl req -x509 -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365 -nodes -subj "/CN=192.168.58.122"
+
+
+daphne -e ssl:port=8000:interface=0.0.0.0:privateKey=key.pem:certKey=cert.pem face_attendance.asgi:application

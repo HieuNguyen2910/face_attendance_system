@@ -1,0 +1,109 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin{% endblock %} — Hệ thống Chấm công</title>
+    <link rel="stylesheet" href="{% static 'attendance/css/admin.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="app-layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <span class="brand-icon">◉</span>
+            <div class="brand-text">
+                <div class="brand-title">Admin Panel</div>
+                <div class="brand-sub">Hệ thống Chấm công</div>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle" title="Thu/Mở sidebar">&#8249;</button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">QUẢN TRỊ</div>
+            <a href="{% url 'admin_dashboard' %}"
+               class="nav-item {% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}"
+               data-tooltip="Dashboard">
+                <span class="nav-icon">⊞</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="{% url 'admin_manage' %}"
+               class="nav-item {% if request.resolver_match.url_name == 'admin_manage' %}active{% endif %}"
+               data-tooltip="Quản lí Nhân viên">
+                <span class="nav-icon">👥</span>
+                <span class="nav-text">Quản lí Nhân viên</span>
+            </a>
+            <a href="{% url 'admin_checkin' %}"
+               class="nav-item {% if request.resolver_match.url_name == 'admin_checkin' %}active{% endif %}"
+               data-tooltip="Chấm Công">
+                <span class="nav-icon">📷</span>
+                <span class="nav-text">Chấm Công</span>
+            </a>
+            <a href="{% url 'admin_history' %}"
+               class="nav-item {% if request.resolver_match.url_name == 'admin_history' %}active{% endif %}"
+               data-tooltip="Lịch sử">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">Lịch sử Chấm công</span>
+            </a>
+            <div class="nav-section" style="margin-top: 6px;">CÀI ĐẶT</div>
+            <a href="{% url 'admin_create_admin' %}"
+               class="nav-item {% if request.resolver_match.url_name == 'admin_create_admin' %}active{% endif %}"
+               data-tooltip="Tạo Admin">
+                <span class="nav-icon">⚙</span>
+                <span class="nav-text">Tạo Admin Mới</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info-bar">
+                <span class="nav-icon">👤</span>
+                <span class="nav-text">{{ request.session.username|default:"Admin" }}</span>
+            </div>
+            <a href="{% url 'logout' %}" class="nav-item logout-item" data-tooltip="Đăng xuất">
+                <span class="nav-icon">⏻</span>
+                <span class="nav-text">Đăng xuất</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- ===== PAGE WRAPPER ===== -->
+    <div class="page-wrapper" id="pageWrapper">
+        <header class="top-bar">
+            <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+            <div class="user-badge">
+                <span>👤</span>
+                <span>{{ request.session.username|default:"Admin" }}</span>
+            </div>
+        </header>
+
+        <main class="page-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="page-footer">
+            &copy; 2024 Face Attendance System | DATN
+        </footer>
+    </div>
+
+</div>
+
+<script>
+    const sidebar = document.getElementById('sidebar');
+    const toggle  = document.getElementById('sidebarToggle');
+
+    if (localStorage.getItem('adminSidebarCollapsed') === 'true') {
+        sidebar.classList.add('collapsed');
+    }
+
+    toggle.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        localStorage.setItem('adminSidebarCollapsed', sidebar.classList.contains('collapsed'));
+    });
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

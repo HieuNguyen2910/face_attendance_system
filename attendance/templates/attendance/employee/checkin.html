@@ -1,0 +1,318 @@
+{% extends "attendance/employee/base_employee.html" %}
+{% load static %}
+
+{% block title %}Chấm Công{% endblock %}
+{% block page_title %}Chấm Công{% endblock %}
+
+{% block extra_css %}
+<style>
+
+/* ── Layout ── */
+.emp-checkin-layout {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 18px;
+    align-items: start;
+}
+
+/* ── Camera Card ── */
+.camera-card {
+    background: #0f172a;
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid #1e293b;
+}
+.camera-card-header {
+    display: flex; align-items: center;
+    padding: 10px 16px;
+    background: rgba(255,255,255,0.04);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.camera-live-badge {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 11.5px; font-weight: 600;
+    color: rgba(255,255,255,0.7);
+    text-transform: uppercase; letter-spacing: 0.06em;
+}
+.camera-live-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: #4ade80;
+    box-shadow: 0 0 0 2px rgba(74,222,128,0.25);
+    animation: camPulse 2s ease-in-out infinite;
+}
+@keyframes camPulse {
+    0%,100% { box-shadow: 0 0 0 2px rgba(74,222,128,0.25); }
+    50%      { box-shadow: 0 0 0 5px rgba(74,222,128,0.06); }
+}
+.camera-feed {
+    position: relative;
+    width: 100%; aspect-ratio: 16/10;
+    background: #020617;
+}
+.camera-feed video {
+    width: 100%; height: 100%;
+    object-fit: cover; transform: scaleX(-1); display: block;
+}
+.camera-feed canvas {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    pointer-events: none; transform: scaleX(-1);
+}
+
+/* ── Side Panel ── */
+.side-panel { display: flex; flex-direction: column; gap: 14px; }
+
+/* ── Clock Card ── */
+.clock-card {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 16px 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    text-align: center;
+}
+.clock-time {
+    font-size: 34px; font-weight: 800; color: var(--text-primary);
+    letter-spacing: 2px; font-variant-numeric: tabular-nums; line-height: 1;
+    margin-bottom: 4px;
+}
+.clock-date { font-size: 12px; color: var(--text-muted); font-weight: 500; }
+
+/* ── Employee Card ── */
+.emp-card {
+    border-radius: var(--radius);
+    overflow: hidden;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+}
+.emp-card-banner {
+    background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 55%, #3b82f6 100%);
+    padding: 18px 18px 16px;
+    position: relative;
+    overflow: hidden;
+}
+.emp-card-banner::after {
+    content: '';
+    position: absolute; top: -20px; right: -20px;
+    width: 100px; height: 100px; border-radius: 50%;
+    background: rgba(255,255,255,0.06);
+    pointer-events: none;
+}
+.emp-card-banner-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+    text-transform: uppercase; color: rgba(255,255,255,0.5);
+    margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+}
+.emp-card-banner-label .material-symbols-outlined {
+    font-size: 13px;
+    font-variation-settings: 'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20;
+}
+.emp-card-id {
+    font-size: 24px; font-weight: 800; color: #fff; letter-spacing: 1.5px; line-height: 1;
+}
+.emp-card-name {
+    font-size: 13px; color: rgba(255,255,255,0.75); font-weight: 500;
+    margin-top: 5px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+/* ── Face Hint Card ──
+   employee_checkin.js sets: faceHintBar.className = 'face-hint-bar hint-{state}'  */
+.face-hint-bar {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+    transition: border-color 0.25s;
+}
+.face-hint-bar.hint-ok    { border-color: var(--success); }
+.face-hint-bar.hint-small,
+.face-hint-bar.hint-large { border-color: #f59e0b; }
+
+.face-hint-inner {
+    padding: 16px;
+    display: flex; flex-direction: column; align-items: center;
+    gap: 10px; text-align: center;
+}
+.face-hint-icon-wrap {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: var(--primary-muted);
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.25s;
+}
+.face-hint-icon-wrap .material-symbols-outlined {
+    font-size: 28px; color: var(--primary);
+    font-variation-settings: 'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 24;
+    transition: color 0.25s, font-variation-settings 0.25s;
+}
+.face-hint-bar.hint-ok .face-hint-icon-wrap { background: rgba(16,185,129,0.13); }
+.face-hint-bar.hint-ok .face-hint-icon-wrap .material-symbols-outlined {
+    color: var(--success); font-variation-settings: 'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24;
+}
+.face-hint-bar.hint-small .face-hint-icon-wrap,
+.face-hint-bar.hint-large .face-hint-icon-wrap { background: rgba(245,158,11,0.13); }
+.face-hint-bar.hint-small .face-hint-icon-wrap .material-symbols-outlined,
+.face-hint-bar.hint-large .face-hint-icon-wrap .material-symbols-outlined { color: #f59e0b; }
+
+.face-hint-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; color: var(--text-muted); }
+.face-hint-msg   { font-size: 13px; font-weight: 600; color: var(--text-secondary); transition: color 0.25s; line-height: 1.4; }
+.face-hint-bar.hint-ok    .face-hint-msg { color: var(--success); }
+.face-hint-bar.hint-small .face-hint-msg,
+.face-hint-bar.hint-large .face-hint-msg { color: #f59e0b; }
+.face-hint-bar.hint-none  .face-hint-msg { color: var(--text-muted); }
+
+/* ── Capture Button ── */
+.emp-capture-btn {
+    width: 100%; padding: 13px;
+    font-size: 14.5px; font-weight: 700; letter-spacing: 0.3px;
+    border-radius: var(--radius); border: none; cursor: pointer;
+    background: linear-gradient(135deg, #1d4ed8, #2563eb);
+    color: #fff;
+    box-shadow: 0 2px 10px rgba(37,99,235,0.30);
+    transition: opacity 0.15s, transform 0.1s, box-shadow 0.15s;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.emp-capture-btn .material-symbols-outlined {
+    font-size: 18px;
+    font-variation-settings: 'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 20;
+}
+.emp-capture-btn:hover:not(:disabled)  { opacity: 0.90; box-shadow: 0 4px 14px rgba(37,99,235,0.40); }
+.emp-capture-btn:active:not(:disabled) { transform: scale(0.98); }
+.emp-capture-btn:disabled { opacity: 0.35; cursor: not-allowed; box-shadow: none; }
+.emp-capture-btn.loading  { opacity: 0.65; cursor: wait; }
+
+/* ── Result Banner ── */
+.result-banner {
+    display: none;
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1.5px solid transparent;
+}
+.result-banner.success {
+    display: block;
+    background: rgba(16,185,129,0.07);
+    border-color: rgba(16,185,129,0.28);
+}
+.result-banner.fail {
+    display: block;
+    background: rgba(239,68,68,0.06);
+    border-color: rgba(239,68,68,0.28);
+}
+.rb-title {
+    display: flex; align-items: center; gap: 7px;
+    padding: 11px 14px 8px;
+    font-size: 13px; font-weight: 700;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.result-banner.success .rb-title { color: var(--success); }
+.result-banner.fail    .rb-title { color: #ef4444; }
+.rb-title .material-symbols-outlined {
+    font-size: 17px;
+    font-variation-settings: 'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 20;
+}
+.rb-row {
+    display: flex; align-items: center; gap: 7px;
+    padding: 6px 14px;
+    font-size: 12px; font-weight: 500; color: var(--text-secondary);
+}
+.rb-row:last-child { padding-bottom: 10px; }
+.rb-row .material-symbols-outlined {
+    font-size: 14px; flex-shrink: 0; opacity: 0.6;
+    font-variation-settings: 'FILL' 0,'wght' 300,'GRAD' 0,'opsz' 20;
+}
+.rb-row strong { color: var(--text-primary); font-weight: 600; }
+
+/* ── Dark mode ── */
+html.dark .camera-card    { border-color: #1e293b; }
+html.dark .clock-card, html.dark .face-hint-bar { background: #1e293b; }
+html.dark .emp-card-footer { background: #1e293b; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .emp-checkin-layout { grid-template-columns: 1fr; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="emp-checkin-layout">
+
+    <!-- ── Camera ── -->
+    <div class="camera-card">
+        <div class="camera-card-header">
+            <div class="camera-live-badge">
+                <span class="camera-live-dot"></span>
+                Camera đang hoạt động
+            </div>
+        </div>
+        <div class="camera-feed">
+            <video id="video" autoplay muted playsinline></video>
+            <canvas id="overlay"></canvas>
+        </div>
+    </div>
+
+    <!-- ── Side Panel ── -->
+    <div class="side-panel">
+
+        <!-- Clock -->
+        <div class="clock-card">
+            <div id="realtimeClock" class="clock-time">--:--:--</div>
+            <div class="clock-date" id="clockDate">--</div>
+        </div>
+
+        <!-- Employee Card -->
+        <div class="emp-card">
+            <div class="emp-card-banner">
+                <div class="emp-card-banner-label">
+                    <span class="material-symbols-outlined">badge</span>
+                    Nhân viên
+                </div>
+                <div class="emp-card-id">{{ employee.user_id }}</div>
+                <div class="emp-card-name">{{ employee.name }}</div>
+            </div>
+        </div>
+
+        <!-- Face Hint -->
+        <div class="face-hint-bar hint-none" id="faceHintBar">
+            <div class="face-hint-inner">
+                <div class="face-hint-icon-wrap">
+                    <span class="material-symbols-outlined">face_unlock</span>
+                </div>
+                <div class="face-hint-label">Vị trí khuôn mặt</div>
+                <div class="face-hint-msg" id="faceHintText">Đang khởi động camera...</div>
+            </div>
+        </div>
+
+        <!-- Capture -->
+        <button id="captureBtn" type="button" class="emp-capture-btn" disabled>
+            <span class="material-symbols-outlined">photo_camera</span>
+            Chấm công
+        </button>
+
+        <!-- Result -->
+        <div class="result-banner" id="resultBanner"></div>
+
+    </div>
+</div>
+
+<script>
+window.selfAttendanceUrl  = "{% url 'api_employee_self_attendance' %}";
+window.detectFaceUrl      = "{% url 'api_detect_face' %}";
+window.cameraReleaseUrl   = "{% url 'api_camera_release' %}";
+window.employeeId         = "{{ employee.user_id }}";
+
+(function () {
+    var VI_DAYS = ['Chủ nhật','Thứ hai','Thứ ba','Thứ tư','Thứ năm','Thứ sáu','Thứ bảy'];
+    var now = new Date();
+    document.getElementById('clockDate').textContent =
+        VI_DAYS[now.getDay()] + ', ' + now.getDate() + '/' + (now.getMonth()+1) + '/' + now.getFullYear();
+})();
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'attendance/js/employee_checkin.js' %}?v=2"></script>
+{% endblock %}

@@ -1,0 +1,244 @@
+{% extends "attendance/admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}Tạo Admin{% endblock %}
+{% block page_title %}Tạo Admin Mới{% endblock %}
+
+{% block extra_css %}
+<style>
+  .ca-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px;
+  }
+  .ca-card {
+    width: 100%;
+    max-width: 520px;
+    background: var(--bg-card);
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(15,23,42,0.08);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .ca-header {
+    padding: 28px 32px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .ca-header-icon {
+    width: 44px; height: 44px; flex-shrink: 0;
+    background: linear-gradient(135deg, var(--primary) 0%, #0ea5e9 100%);
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ca-header-icon svg { width: 22px; height: 22px; }
+  .ca-header-text h2 {
+    font-size: 15px; font-weight: 700;
+    color: var(--text-primary); margin: 0 0 3px;
+  }
+  .ca-header-text p {
+    font-size: 12.5px; color: var(--text-muted); margin: 0;
+  }
+  .ca-body { padding: 28px 32px; }
+  .ca-alert {
+    display: flex; align-items: center; gap: 10px;
+    padding: 11px 14px;
+    border-radius: 9px;
+    font-size: 13px;
+    margin-bottom: 22px;
+  }
+  .ca-alert svg { width: 16px; height: 16px; flex-shrink: 0; }
+  .ca-alert-error   { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+  .ca-alert-success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+  .ca-field { margin-bottom: 18px; }
+  .ca-field label {
+    display: block;
+    font-size: 12px; font-weight: 600; letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 7px;
+  }
+  .ca-input-wrap { position: relative; }
+  .ca-input-wrap input {
+    width: 100%; box-sizing: border-box;
+    padding: 10px 42px 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 9px;
+    font-size: 13.5px; font-family: inherit;
+    color: var(--text-primary);
+    background: var(--bg-body, #f8fafc);
+    transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+    outline: none;
+  }
+  .ca-input-wrap input:focus {
+    border-color: var(--primary);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(14,165,233,0.1);
+  }
+  .ca-eye-btn {
+    position: absolute; right: 11px; top: 50%; transform: translateY(-50%);
+    background: none; border: none; cursor: pointer;
+    color: var(--text-muted); padding: 4px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 5px; transition: color 0.15s;
+  }
+  .ca-eye-btn:hover { color: var(--primary); }
+  .ca-eye-btn svg { width: 17px; height: 17px; }
+  .ca-divider { border: none; border-top: 1px solid var(--border); margin: 22px 0 20px; }
+  .ca-rules {
+    display: flex; flex-direction: column; gap: 7px;
+    margin-bottom: 22px;
+  }
+  .ca-rule {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12px; color: var(--text-muted);
+  }
+  .ca-rule svg { width: 13px; height: 13px; color: var(--primary); flex-shrink: 0; }
+  .ca-submit {
+    width: 100%; padding: 11px 0;
+    background: var(--primary);
+    color: #fff;
+    border: none; border-radius: 9px;
+    font-size: 14px; font-weight: 600;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: background 0.18s, transform 0.12s, box-shadow 0.18s;
+    box-shadow: 0 3px 12px rgba(14,165,233,0.28);
+  }
+  .ca-submit:hover {
+    background: #0284c7;
+    box-shadow: 0 5px 16px rgba(14,165,233,0.38);
+    transform: translateY(-1px);
+  }
+  .ca-submit:active { transform: translateY(0); }
+  .ca-submit svg { width: 16px; height: 16px; }
+  @media (max-width: 560px) {
+    .ca-header, .ca-body { padding-left: 20px; padding-right: 20px; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="ca-wrapper">
+  <div class="ca-card">
+
+    <div class="ca-header">
+      <div class="ca-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+          <circle cx="9" cy="7" r="4"/>
+          <line x1="19" y1="8" x2="19" y2="14"/>
+          <line x1="22" y1="11" x2="16" y2="11"/>
+        </svg>
+      </div>
+      <div class="ca-header-text">
+        <h2>Tạo tài khoản Admin</h2>
+        <p>Cấp quyền quản trị hệ thống cho tài khoản mới</p>
+      </div>
+    </div>
+
+    <div class="ca-body">
+
+      {% if error %}
+        <div class="ca-alert ca-alert-error">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          {{ error }}
+        </div>
+      {% endif %}
+      {% if success %}
+        <div class="ca-alert ca-alert-success">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          {{ success }}
+        </div>
+      {% endif %}
+
+      <form method="POST" autocomplete="off">
+        {% csrf_token %}
+
+        <div class="ca-field">
+          <label>Tên đăng nhập</label>
+          <div class="ca-input-wrap">
+            <input type="text" name="username" placeholder="Ví dụ: admin2" required autocomplete="username">
+          </div>
+        </div>
+
+        <hr class="ca-divider">
+
+        <div class="ca-field">
+          <label>Mật khẩu</label>
+          <div class="ca-input-wrap">
+            <input type="password" id="pw1" name="password" placeholder="Tối thiểu 6 ký tự" required autocomplete="new-password">
+            <button type="button" class="ca-eye-btn" onclick="togglePw('pw1',this)" title="Hiện/ẩn">
+              <svg id="eye-pw1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="ca-field">
+          <label>Xác nhận mật khẩu</label>
+          <div class="ca-input-wrap">
+            <input type="password" id="pw2" name="password_confirm" placeholder="Nhập lại mật khẩu" required autocomplete="new-password">
+            <button type="button" class="ca-eye-btn" onclick="togglePw('pw2',this)" title="Hiện/ẩn">
+              <svg id="eye-pw2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+              </svg>
+            </button>
+          </div>
+        </div>
+
+        <div class="ca-rules">
+          <div class="ca-rule">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Tên đăng nhập không chứa khoảng trắng
+          </div>
+          <div class="ca-rule">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Mật khẩu tối thiểu 6 ký tự
+          </div>
+          <div class="ca-rule">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="20 6 9 17 4 12"/>
+            </svg>
+            Admin mới có toàn quyền quản lý hệ thống
+          </div>
+        </div>
+
+        <button type="submit" class="ca-submit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <line x1="19" y1="8" x2="19" y2="14"/>
+            <line x1="22" y1="11" x2="16" y2="11"/>
+          </svg>
+          Tạo tài khoản Admin
+        </button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<script>
+function togglePw(id, btn) {
+  const inp = document.getElementById(id);
+  const isHidden = inp.type === 'password';
+  inp.type = isHidden ? 'text' : 'password';
+  const svg = document.getElementById('eye-' + id);
+  svg.innerHTML = isHidden
+    ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><line x1="1" y1="1" x2="23" y2="23"/>'
+    : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+}
+</script>
+{% endblock %}

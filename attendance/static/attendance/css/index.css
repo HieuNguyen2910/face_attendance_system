@@ -115,11 +115,22 @@ main {
     background:#e8f5e9; 
     box-shadow:0 0 20px rgba(76,175,80,0.5);
 }
-#recognizedId.unknown { 
-    color:#c62828; 
-    border-color:#c62828; 
-    background:#ffebee; 
+#recognizedId.unknown {
+    color:#c62828;
+    border-color:#c62828;
+    background:#ffebee;
     box-shadow:0 0 20px rgba(244,67,54,0.5);
+}
+#recognizedId.spoof {
+    color:#bf360c;
+    border-color:#e64a19;
+    background:#fbe9e7;
+    box-shadow:0 0 20px rgba(230,74,25,0.6);
+    animation:spoofPulse 0.8s ease-in-out infinite;
+}
+@keyframes spoofPulse {
+    0%,100% { box-shadow:0 0 20px rgba(230,74,25,0.5); }
+    50%      { box-shadow:0 0 40px rgba(230,74,25,1); }
 }
 
 /* ================= Button Group Inline ================= */

@@ -1,0 +1,52 @@
+{% extends "attendance/admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}Quản lí Nhân viên{% endblock %}
+{% block page_title %}Quản lí Nhân viên{% endblock %}
+
+{% block content %}
+<div class="manage-card">
+    <h2>Quản lý nhân viên</h2>
+
+    <div class="controls">
+        <div>
+            <button id="btnAdd" class="primary" style="padding:10px 28px; font-size:15px; border-radius:18px;">Thêm nhân viên</button>
+            <button id="btnEdit" class="warning" style="padding:10px 28px; font-size:15px; border-radius:18px; margin-left:8px;">Sửa thông tin</button>
+            <button id="btnDelete" class="danger" style="padding:10px 28px; font-size:15px; border-radius:18px; margin-left:8px;">Xóa nhân viên</button>
+        </div>
+        <div>
+            <input id="searchInput" type="text" placeholder="Tìm theo ID hoặc tên">
+        </div>
+    </div>
+
+    <table class="user-table" id="userTable">
+        <thead>
+            <tr>
+                <th style="width:20%">ID</th>
+                <th style="width:45%">Họ tên</th>
+                <th style="width:35%">Vị trí</th>
+            </tr>
+        </thead>
+        <tbody id="userTBody">
+            <!-- JS sẽ render dữ liệu -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal container -->
+<div id="modalRoot" style="display:none"></div>
+
+<script>
+    window.apiUrls = {
+        listUsers:        "{% url 'api_list_users' %}",
+        deleteUser:       "{% url 'api_delete_user' %}",
+        updateUser:       "{% url 'api_update_user' %}",
+        registerEmployee: "{% url 'api_register_employee' %}",
+        replaceFace:      "{% url 'api_replace_face' %}"
+    };
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'attendance/js/manage.js' %}?v=10"></script>
+{% endblock %}

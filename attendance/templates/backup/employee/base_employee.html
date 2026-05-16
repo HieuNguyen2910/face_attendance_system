@@ -1,0 +1,103 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Nhân viên{% endblock %} — Hệ thống Chấm công</title>
+    <link rel="stylesheet" href="{% static 'attendance/css/admin.css' %}">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+<div class="app-layout">
+
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <span class="brand-icon" style="color:#22c55e;">◉</span>
+            <div class="brand-text">
+                <div class="brand-title">Nhân viên</div>
+                <div class="brand-sub">Hệ thống Chấm công</div>
+            </div>
+            <button class="sidebar-toggle" id="sidebarToggle" title="Thu/Mở sidebar">&#8249;</button>
+        </div>
+
+        <nav class="sidebar-nav">
+            <div class="nav-section">MENU</div>
+            <a href="{% url 'employee_dashboard' %}"
+               class="nav-item {% if request.resolver_match.url_name == 'employee_dashboard' %}active{% endif %}"
+               data-tooltip="Dashboard">
+                <span class="nav-icon">⊞</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="{% url 'employee_checkin' %}"
+               class="nav-item {% if request.resolver_match.url_name == 'employee_checkin' %}active{% endif %}"
+               data-tooltip="Chấm Công">
+                <span class="nav-icon">📷</span>
+                <span class="nav-text">Chấm Công</span>
+            </a>
+            <a href="{% url 'employee_history' %}"
+               class="nav-item {% if request.resolver_match.url_name == 'employee_history' %}active{% endif %}"
+               data-tooltip="Lịch sử">
+                <span class="nav-icon">📋</span>
+                <span class="nav-text">Lịch sử</span>
+            </a>
+            <div class="nav-section" style="margin-top: 6px;">TÀI KHOẢN</div>
+            <a href="{% url 'employee_change_password' %}"
+               class="nav-item {% if request.resolver_match.url_name == 'employee_change_password' %}active{% endif %}"
+               data-tooltip="Đổi Mật khẩu">
+                <span class="nav-icon">🔑</span>
+                <span class="nav-text">Đổi Mật khẩu</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <div class="user-info-bar">
+                <span class="nav-icon">👤</span>
+                <span class="nav-text">{{ request.session.username|default:"Nhân viên" }}</span>
+            </div>
+            <a href="{% url 'logout' %}" class="nav-item logout-item" data-tooltip="Đăng xuất">
+                <span class="nav-icon">⏻</span>
+                <span class="nav-text">Đăng xuất</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- ===== PAGE WRAPPER ===== -->
+    <div class="page-wrapper" id="pageWrapper">
+        <header class="top-bar">
+            <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+            <div class="user-badge">
+                <span>👤</span>
+                <span>{{ request.session.username|default:"Nhân viên" }}</span>
+            </div>
+        </header>
+
+        <main class="page-content">
+            {% block content %}{% endblock %}
+        </main>
+
+        <footer class="page-footer">
+            &copy; 2024 Face Attendance System | DATN
+        </footer>
+    </div>
+
+</div>
+
+<script>
+    const sidebar = document.getElementById('sidebar');
+    const toggle  = document.getElementById('sidebarToggle');
+
+    if (localStorage.getItem('empSidebarCollapsed') === 'true') {
+        sidebar.classList.add('collapsed');
+    }
+
+    toggle.addEventListener('click', () => {
+        sidebar.classList.toggle('collapsed');
+        localStorage.setItem('empSidebarCollapsed', sidebar.classList.contains('collapsed'));
+    });
+</script>
+
+{% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,152 @@
+{% extends "attendance/admin/base_admin.html" %}
+{% load static %}
+
+{% block title %}Lịch sử Chấm công{% endblock %}
+{% block page_title %}Lịch sử Chấm công{% endblock %}
+
+{% block content %}
+<style>
+.hist-input {
+    height: 38px;
+    padding: 0 11px;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    background: var(--bg-card);
+    color: var(--text-primary);
+    outline: none;
+    transition: border-color .18s;
+    box-sizing: border-box;
+}
+.hist-input:focus { border-color: var(--primary); }
+.hist-label { font-size: 12px; color: var(--text-muted); white-space: nowrap; }
+</style>
+
+<div class="history-card">
+    <div style="display:flex; align-items:center; gap:9px; margin-bottom:22px; padding-bottom:16px; border-bottom:1px solid var(--border);">
+        <span style="display:block; width:4px; height:20px; background:linear-gradient(180deg,var(--primary),#60a5fa); border-radius:2px; flex-shrink:0;"></span>
+        <h2 style="font-size:15px; font-weight:700; color:var(--text-primary); margin:0;">Lịch sử chấm công</h2>
+    </div>
+
+    <!-- Mode tabs -->
+    <div style="display:flex; gap:0; margin-bottom:18px; border-bottom:2px solid var(--border);">
+        <button class="hist-mode-tab active" data-mode="day"
+                style="padding:9px 22px; font-size:13px; border:none; background:none; cursor:pointer;
+                       border-bottom:2px solid var(--primary); margin-bottom:-2px;
+                       color:var(--primary); font-weight:600;">
+            Theo ngày
+        </button>
+        <button class="hist-mode-tab" data-mode="month"
+                style="padding:9px 22px; font-size:13px; border:none; background:none; cursor:pointer;
+                       border-bottom:2px solid transparent; margin-bottom:-2px;
+                       color:var(--text-muted); font-weight:400;">
+            Theo tháng
+        </button>
+    </div>
+
+    <!-- Time controls -->
+    <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:flex-end; margin-bottom:14px;">
+
+        <!-- Day controls -->
+        <form id="filterDayForm" class="hist-ctrl" data-ctrlfor="day"
+              style="display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <span class="hist-label">Ngày</span>
+                <input type="number" id="dayInput" class="hist-input"
+                       min="1" max="31" placeholder="dd" style="width:66px; text-align:center;">
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <span class="hist-label">Tháng</span>
+                <select id="monthDaySelect" class="hist-input" style="width:120px;">
+                    <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
+                    <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
+                    <option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+                    <option value="7">Tháng 7</option><option value="8">Tháng 8</option>
+                    <option value="9">Tháng 9</option><option value="10">Tháng 10</option>
+                    <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+                </select>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <span class="hist-label">Năm</span>
+                <input type="number" id="yearDayInput" class="hist-input"
+                       min="2020" max="2099" placeholder="yyyy" style="width:88px; text-align:center;">
+            </div>
+            <button type="submit" class="btn btn-primary"
+                    style="height:38px; padding:0 20px; font-size:13px; align-self:flex-end;">Xem</button>
+        </form>
+
+        <!-- Month controls -->
+        <form id="filterMonthForm" class="hist-ctrl" data-ctrlfor="month"
+              style="display:none; flex-wrap:wrap; align-items:flex-end; gap:10px;">
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <span class="hist-label">Tháng</span>
+                <select id="monthSelect" class="hist-input" style="width:128px;">
+                    <option value="1">Tháng 1</option><option value="2">Tháng 2</option>
+                    <option value="3">Tháng 3</option><option value="4">Tháng 4</option>
+                    <option value="5">Tháng 5</option><option value="6">Tháng 6</option>
+                    <option value="7">Tháng 7</option><option value="8">Tháng 8</option>
+                    <option value="9">Tháng 9</option><option value="10">Tháng 10</option>
+                    <option value="11">Tháng 11</option><option value="12">Tháng 12</option>
+                </select>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:4px;">
+                <span class="hist-label">Năm</span>
+                <input type="number" id="yearMonthInput" class="hist-input"
+                       min="2020" max="2099" placeholder="yyyy" style="width:88px; text-align:center;">
+            </div>
+            <button type="submit" class="btn btn-primary"
+                    style="height:38px; padding:0 20px; font-size:13px; align-self:flex-end;">Xem</button>
+        </form>
+
+    </div>
+
+    <!-- Search bar (always visible, filters current results) -->
+    <div style="margin-bottom:18px;">
+        <div style="position:relative; max-width:340px;">
+            <span style="position:absolute; left:11px; top:50%; transform:translateY(-50%);
+                         color:var(--text-muted); font-size:14px; pointer-events:none;">🔍</span>
+            <input type="text" id="searchInput" class="hist-input"
+                   placeholder="Tìm theo ID hoặc họ tên..."
+                   style="width:100%; padding-left:34px;">
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="history-table" id="historyTable">
+            <thead id="historyThead">
+                <tr>
+                    <th>Ngày</th>
+                    <th>ID</th>
+                    <th>Họ tên</th>
+                    <th>Check-in</th>
+                    <th>Trạng thái vào</th>
+                    <th>Check-out</th>
+                    <th>Trạng thái ra</th>
+                </tr>
+            </thead>
+            <tbody id="historyTBody">
+                <tr>
+                    <td colspan="7" class="empty">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <div class="empty-state-text">Đang tải dữ liệu...</div>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+window.historyApiUrls = {
+    byDay:   "{% url 'api_history_by_day' %}",
+    byMonth: "{% url 'api_history_by_month' %}",
+    employeeHistory: "/admin/employee/__ID__/history/"
+};
+</script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'attendance/js/history.js' %}?v=17"></script>
+{% endblock %}

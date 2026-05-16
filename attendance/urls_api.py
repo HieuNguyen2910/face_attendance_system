@@ -17,21 +17,40 @@
 # ]
 
 from django.urls import path
-from . import views
+from . import views, auth_views
 
 urlpatterns = [
+    # ===== AUTH API =====
+    path('admin/create/', auth_views.api_create_admin, name='api_create_admin'),
+
+    # ===== FACE RECOGNITION API =====
+    path('auto_attendance/', views.api_auto_attendance, name='api_auto_attendance'),
+    path('employee_self_attendance/', views.api_employee_self_attendance, name='api_employee_self_attendance'),
     path('recognize/', views.api_recognize, name='api_recognize'),
+    path('detect_face/', views.api_detect_face, name='api_detect_face'),
     path('register/', views.api_register, name='api_register'),
     path('checkin/', views.api_checkin, name='api_checkin'),
     path('checkout/', views.api_checkout, name='api_checkout'),
     path('checkin_status/', views.api_checkin_status, name='api_checkin_status'),
+
+    # ===== EMPLOYEE MANAGEMENT API =====
     path('users/', views.api_list_users, name='api_list_users'),
     path('update_user/', views.api_update_user, name='api_update_user'),
     path('delete_user/', views.api_delete_user, name='api_delete_user'),
     path('replace_face/', views.api_replace_face, name='api_replace_face'),
     path('register_employee/', views.api_register_employee, name='api_register_employee'),
+    path('register_frame/', views.api_register_frame, name='api_register_frame'),
+    path('clear_embeddings/', views.api_clear_embeddings, name='api_clear_embeddings'),
+
+    # ===== CAMERA =====
+    path('camera/release/', views.api_camera_release, name='api_camera_release'),
+
+    # ===== ATTENDANCE HISTORY API =====
     path('check_history/', views.api_history, name='api_history'),
     path('check_history/day/', views.api_history_by_day, name='api_history_by_day'),
+    path('check_history/month/', views.api_history_by_month, name='api_history_by_month'),
+    path('check_history/year/', views.api_history_by_year, name='api_history_by_year'),
     path('check_history/user/<str:user_id>/', views.api_history_by_id, name='api_history_by_id'),
     path('check_user/<str:user_id>/', views.api_check_user, name='api_check_user'),
 ]
+

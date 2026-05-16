@@ -1,0 +1,71 @@
+{% extends "attendance/employee/base_employee.html" %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Chào, {{ employee.name }}{% endblock %}
+
+{% block extra_css %}
+<meta http-equiv="refresh" content="60">
+{% endblock %}
+
+{% block content %}
+<div style="display:flex; justify-content:flex-end; margin-bottom:16px; align-items:center; gap:10px;">
+    <span style="font-size:12px; color:#aaa;">Tự làm mới sau 60 giây</span>
+    <a href="{% url 'employee_dashboard' %}" class="btn btn-primary" style="padding:7px 18px; font-size:13px; border-radius:14px;">↻ Làm mới</a>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">🕐</div>
+        <div class="stat-info">
+            <h3>Check-in Hôm nay</h3>
+            <p class="stat-number" style="font-size:18px;">
+                {% if today_record.checkin %}{{ today_record.checkin|time:"H:i:s" }}{% else %}Chưa check-in{% endif %}
+            </p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">🕕</div>
+        <div class="stat-info">
+            <h3>Check-out Hôm nay</h3>
+            <p class="stat-number" style="font-size:18px;">
+                {% if today_record.checkout %}{{ today_record.checkout|time:"H:i:s" }}{% else %}Chưa check-out{% endif %}
+            </p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-info">
+            <h3>Đúng giờ (tháng)</h3>
+            <p class="stat-number">{{ on_time }}</p>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">⚠️</div>
+        <div class="stat-info">
+            <h3>Muộn (tháng)</h3>
+            <p class="stat-number">{{ late }}</p>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h3>Thông tin nhân viên</h3>
+    <table class="attendance-table">
+        <tbody>
+            <tr><td style="width:160px; color:#888; font-weight:600;">Mã nhân viên</td><td>{{ employee.user_id }}</td></tr>
+            <tr><td style="color:#888; font-weight:600;">Họ tên</td><td>{{ employee.name }}</td></tr>
+            <tr><td style="color:#888; font-weight:600;">Vị trí</td><td>{{ employee.position }}</td></tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="section">
+    <h3>Thao tác nhanh</h3>
+    <div style="display:flex; gap:12px; flex-wrap:wrap;">
+        <a href="{% url 'employee_checkin' %}" class="btn btn-primary">📷 Chấm Công</a>
+        <a href="{% url 'employee_history' %}" class="btn" style="background:#6c757d; color:white; border-radius:18px; padding:9px 20px; font-weight:600;">📋 Lịch sử</a>
+        <a href="{% url 'employee_change_password' %}" class="btn" style="background:#6c757d; color:white; border-radius:18px; padding:9px 20px; font-weight:600;">🔑 Đổi Mật khẩu</a>
+    </div>
+</div>
+{% endblock %}

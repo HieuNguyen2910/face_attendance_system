@@ -1,0 +1,40 @@
+{% extends "attendance/employee/base_employee.html" %}
+{% load static %}
+
+{% block title %}Lịch sử Chấm công{% endblock %}
+{% block page_title %}Lịch sử Chấm công{% endblock %}
+
+{% block content %}
+<div class="history-card">
+    <h2>Lịch sử của {{ employee.name }}</h2>
+
+    <table class="history-table">
+        <thead>
+            <tr>
+                <th>Ngày</th>
+                <th>Check-in</th>
+                <th>Trạng thái Check-in</th>
+                <th>Check-out</th>
+                <th>Trạng thái Check-out</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in history %}
+            <tr>
+                <td>{{ record.date|date:"d-m-Y" }}</td>
+                <td>{{ record.checkin|time:"H:i:s"|default:"--" }}</td>
+                <td>
+                    <span class="status {% if record.status_in == 'Đúng giờ' %}on-time{% elif record.status_in == 'Muộn' %}late{% endif %}">
+                        {{ record.status_in|default:"--" }}
+                    </span>
+                </td>
+                <td>{{ record.checkout|time:"H:i:s"|default:"--" }}</td>
+                <td><span class="status">{{ record.status_out|default:"--" }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="empty">Chưa có dữ liệu chấm công</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

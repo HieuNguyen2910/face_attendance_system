@@ -1,2 +1,3 @@
 *.pem
-model/weights/
+model/weights/*.pth
+.gitignore

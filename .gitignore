@@ -1,3 +1,0 @@
-*.pem
-model/weights/*.pth
-.gitignore

@@ -10,7 +10,7 @@ Gender and Age Recognition System automatically detects faces and predicts gende
 
 ## Installation
 
-Make sure you have **Python 3.9** installed. Then install the required dependencies and start the server using the following commands:
+Make sure you have **Python 3.10** installed. Then install the required dependencies and start the server using the following commands:
 
 1. Clone the repository
 
@@ -22,7 +22,7 @@ cd face_attendance_system
 2. Create and activate Conda environment
 
 ```bash
-conda create -n attendance python=3.9 -y
+conda create -n attendance python=3.10 -y
 conda activate attendance
 ```
 
